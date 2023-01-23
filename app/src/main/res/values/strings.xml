@@ -1,0 +1,35 @@
+<resources>
+    <!-- APP STRINGS -->
+    <string name="app_name">DevTools</string>
+    <string name="app_email">devtools@email.com</string>
+
+    <!-- ICONS CONTENT DESCRIPTION STRINGS -->
+    <string name="ic_menu">Menu Icon</string>
+    <string name="ic_settings">Settings Icon</string>
+    <string name="ic_profile">Profile Icon</string>
+
+    <!-- OTHER STRINGS -->
+    <string name="home">Home</string>
+
+    <!-- MYSQL SCREEN -->
+    <string name="conn_name">Connection Name</string>
+    <string name="conn_host">Host</string>
+    <string name="conn_port">Port</string>
+    <string name="conn_user">User</string>
+    <string name="conn_pass">Pass</string>
+    <string name="conn_dbname">Database Name</string>
+    <string name="save_conn">Save Connection</string>
+
+    <!-- MYSQL SCREEN ERRORS -->
+    <string name="err_host_port_and_user_exists">Host, Port and User already exists.</string>
+    <string name="err_conn_name_field_required">Connection name field is required.</string>
+    <string name="err_conn_host_field_required">Host field is required.</string>
+    <string name="err_conn_port_field_required">Port field accepted values range from 0 until 65535.</string>
+    <string name="err_conn_user_field_required">User field is required.</string>
+    <string name="err_conn_pass_field_required">Pass field is required.</string>
+    <string name="err_conn_dbname_field_required">Database Name field is required.</string>
+
+    <!-- ERROR DIALOG -->
+    <string name="err_dialog_warning">Warning</string>
+    <string name="err_dialog_ok">OK</string>
+</resources>
