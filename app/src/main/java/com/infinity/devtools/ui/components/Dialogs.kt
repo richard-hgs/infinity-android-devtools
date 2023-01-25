@@ -1,17 +1,15 @@
+@file:Suppress("FunctionName")
+
 package com.infinity.devtools.ui.components
 
-import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
-import androidx.compose.animation.graphics.res.animatedVectorResource
-import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
-import androidx.compose.animation.graphics.vector.AnimatedImageVector
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.*
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -19,17 +17,33 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.airbnb.lottie.compose.*
 import com.infinity.devtools.R
 import kotlin.math.max
 
-
-@OptIn(ExperimentalAnimationGraphicsApi::class)
 @Composable
 fun WarningDialog(
     open: MutableState<Boolean>,
     msg: String,
-    backgroundColor: Color = MaterialTheme.colors.surface,
-    contentColor: Color = contentColorFor(backgroundColor),
+    icon: @Composable () -> Unit = {
+        val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.ic_warning))
+        val progress by animateLottieCompositionAsState(
+            composition = composition,
+            clipSpec = LottieClipSpec.Frame(min = 10, max = 120),
+            speed = .5f
+        )
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            LottieAnimation(
+                modifier = Modifier.size(80.dp),
+                composition = composition,
+                progress = { progress },
+            )
+        }
+    },
     title: @Composable () -> Unit = {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -49,40 +63,108 @@ fun WarningDialog(
                 text = msg
             )
         }
+    },
+    buttons: @Composable () -> Unit = {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Button(
+                onClick = {
+                    open.value = false
+                }) {
+                Text(stringResource(R.string.err_dialog_ok))
+            }
+            Spacer(modifier = Modifier.height(height = TitleBaselineDistanceFromTop.value.dp))
+        }
+    }
+) {
+    BaseDialog(
+        open = open,
+        msg = msg,
+        icon = icon,
+        title = title,
+        text = text,
+        buttons = buttons,
+        surfaceShape = RoundedCornerShape(16.dp)
+    )
+}
+
+@Composable
+fun BaseDialog(
+    open: MutableState<Boolean>,
+    msg: String,
+    backgroundColor: Color = MaterialTheme.colors.surface,
+    contentColor: Color = contentColorFor(backgroundColor),
+    surfaceShape: Shape = MaterialTheme.shapes.medium,
+    icon: @Composable () -> Unit = {
+        val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.ic_warning))
+        val progress by animateLottieCompositionAsState(
+            composition = composition,
+            clipSpec = LottieClipSpec.Frame(min = 10, max = 120),
+            speed = .5f
+        )
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            LottieAnimation(
+                modifier = Modifier.size(80.dp),
+                composition = composition,
+                progress = { progress },
+            )
+        }
+    },
+    title: @Composable () -> Unit = {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = stringResource(R.string.err_dialog_warning)
+            )
+        }
+    },
+    text: @Composable () -> Unit = {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = msg
+            )
+        }
+    },
+    buttons: @Composable () -> Unit = {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Button(
+                onClick = {
+                    open.value = false
+                }) {
+                Text(stringResource(R.string.err_dialog_ok))
+            }
+            Spacer(modifier = Modifier.height(height = TitleBaselineDistanceFromTop.value.dp))
+        }
     }
 ) {
     if (open.value) {
-        val state = remember { mutableStateOf(true) }
-        val image = rememberAnimatedVectorPainter(
-            animatedImageVector = AnimatedImageVector.animatedVectorResource(R.drawable.ic_warning),
-            atEnd = state.value
-        )
-
         Dialog(
             onDismissRequest = {},
             properties = DialogProperties()
         ) {
             Surface(
-                shape = MaterialTheme.shapes.medium,
+                shape = surfaceShape,
                 color = backgroundColor,
-                contentColor =  contentColor
+                contentColor = contentColor
             ) {
                 Column {
                     AlertDialogBaselineLayout(
-                        icon = {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Image(
-                                    painter = image,
-                                    contentDescription = "image",
-                                    Modifier.size(50.dp).clickable {
-                                        state.value = !state.value
-                                    })
-                            }
-                        },
-                        title = title?.let {
+                        icon = icon,
+                        title = title.let {
                             @Composable {
                                 CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.high) {
                                     val textStyle = MaterialTheme.typography.subtitle1
@@ -90,7 +172,7 @@ fun WarningDialog(
                                 }
                             }
                         },
-                        text = text?.let {
+                        text = text.let {
                             @Composable {
                                 CompositionLocalProvider(
                                     LocalContentAlpha provides ContentAlpha.medium
@@ -101,56 +183,10 @@ fun WarningDialog(
                             }
                         }
                     )
-                    // buttons()
+                    buttons()
                 }
             }
         }
-
-//        AlertDialog(
-//            onDismissRequest = {
-//                // Dismiss the dialog when the user clicks outside the dialog or on the back
-//                // button. If you want to disable that functionality, simply use an empty
-//                // onCloseRequest.
-//                open.value = false
-//            },
-//            title = {
-//                Column(
-//                    modifier = Modifier.fillMaxWidth(),
-//                    horizontalAlignment = Alignment.CenterHorizontally
-//                ) {
-//                    Image(
-//                        painter = image,
-//                        contentDescription = "image",
-//                        Modifier.size(80.dp).clickable {
-//                            state.value = !state.value
-//                        })
-//                    Text(
-//                        text = stringResource(R.string.err_dialog_warning)
-//                    )
-//                }
-//            },
-//            text = {
-//                Column(
-//                    modifier = Modifier.fillMaxWidth(),
-//                    horizontalAlignment = Alignment.CenterHorizontally
-//                ) {
-//                    Text(msg)
-//                }
-//            },
-//            confirmButton = {
-//                Column(
-//                    modifier = Modifier.fillMaxWidth(),
-//                    horizontalAlignment = Alignment.CenterHorizontally
-//                ) {
-//                    Button(
-//                        onClick = {
-//                            open.value = false
-//                        }) {
-//                        Text(stringResource(R.string.err_dialog_ok))
-//                    }
-//                }
-//            },
-//        )
     }
 }
 
@@ -200,7 +236,10 @@ internal fun ColumnScope.AlertDialogBaselineLayout(
             constraints.copy(minHeight = 0)
         )
 
-        val layoutWidth = max(max(titlePlaceable?.width ?: 0, textPlaceable?.width ?: 0), iconPlaceable?.width ?: 0)
+        val layoutWidth = max(
+            max(titlePlaceable?.width ?: 0, textPlaceable?.width ?: 0),
+            iconPlaceable?.width ?: 0
+        )
 
         val firstTitleBaseline = titlePlaceable?.get(FirstBaseline)?.let { baseline ->
             if (baseline == AlignmentLine.Unspecified) null else baseline
@@ -257,7 +296,7 @@ internal fun ColumnScope.AlertDialogBaselineLayout(
                 textPlaceable.height + textOffset - firstTextBaseline
             } else {
                 textPlaceable.height + textOffset - firstTextBaseline -
-                        ((titlePlaceable?.height ?: 0) - lastTitleBaseline)
+                    ((titlePlaceable?.height ?: 0) - lastTitleBaseline)
             }
         } ?: 0
 
@@ -272,11 +311,14 @@ internal fun ColumnScope.AlertDialogBaselineLayout(
 }
 
 private val TitlePadding = Modifier.padding(start = 24.dp, end = 24.dp)
-private val TextPadding = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 28.dp)
+private val TextPadding = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 20.dp)
+
 // Baseline distance from the first line of the title to the top of the dialog
-private val TitleBaselineDistanceFromTop = 30.sp
+private val TitleBaselineDistanceFromTop = 20.sp
+
 // Baseline distance from the first line of the text to the last line of the title
 private val TextBaselineDistanceFromTitle = 30.sp
+
 // For dialogs with no title, baseline distance from the first line of the text to the top of the
 // dialog
 private val TextBaselineDistanceFromTop = 38.sp
@@ -287,12 +329,12 @@ fun PreviewDialogWarning() {
     val open = remember { mutableStateOf(true) }
     WarningDialog(
         open = open,
-        msg = "Um aviso de teste2"
+        msg = "A Test Warning"
     )
     Button(
         onClick = {
             open.value = true
         }) {
-        Text("Clique para abrir o dialog")
+        Text("Click to open dialog")
     }
 }

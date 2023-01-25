@@ -49,7 +49,13 @@ class MysqlConnVm @Inject constructor(
     }
 
     fun updateConn(conn: MysqlConn) = viewModelScope.launch(Dispatchers.IO) {
-        repo.updateMysqlConnInRoom(conn)
+        try {
+            if (validateFields()) {
+                repo.updateMysqlConnInRoom(conn)
+            }
+        } catch (e: SQLiteConstraintException) {
+            showErrorDialog(e.message ?: "")
+        }
     }
 
     fun deleteConn(conn: MysqlConn) = viewModelScope.launch(Dispatchers.IO) {
