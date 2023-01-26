@@ -26,7 +26,7 @@ abstract class AppDatabase : RoomDatabase() {
         fun getDatabase(context: Context): AppDatabase {
             if (INSTANCE == null) {
                 INSTANCE = Room.databaseBuilder(
-                    context.applicationContext,
+                    context,
                     AppDatabase::class.java, DB_NAME
                 )
 //          .addMigrations(

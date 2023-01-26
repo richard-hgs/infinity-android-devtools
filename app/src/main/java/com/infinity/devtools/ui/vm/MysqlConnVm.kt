@@ -4,14 +4,14 @@ import android.database.sqlite.SQLiteConstraintException
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.core.text.trimmedLength
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.infinity.devtools.R
 import com.infinity.devtools.constants.Constants.NO_VALUE
 import com.infinity.devtools.data.model.MysqlConn
+import com.infinity.devtools.di.validators.MysqlValidator
 import com.infinity.devtools.domain.repository.MysqlConnRepo
-import com.infinity.devtools.domain.resource.ResourcesProvider
+import com.infinity.devtools.domain.resources.ResourcesProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,7 +20,8 @@ import javax.inject.Inject
 @HiltViewModel
 class MysqlConnVm @Inject constructor(
     private val repo: MysqlConnRepo,
-    private val resProv: ResourcesProvider
+    private val resProv: ResourcesProvider,
+    private val validator: MysqlValidator
 ): ViewModel() {
     var mysqlConn by mutableStateOf(MysqlConn(0, NO_VALUE, NO_VALUE, 0, NO_VALUE, NO_VALUE, NO_VALUE))
 
@@ -64,27 +65,27 @@ class MysqlConnVm @Inject constructor(
 
     // ================================ VALIDATORS ===================================
     private fun validateFields() : Boolean {
-        if (mysqlConn.name.trimmedLength() <= 0) {
+        if (!validator.connNameIsValid(mysqlConn.name)) {
             showErrorDialog(resProv.getString(R.string.err_conn_name_field_required))
             return false
         }
-        if (mysqlConn.host.trimmedLength() <= 0) {
+        if (!validator.connHostIsValid(mysqlConn.host)) {
             showErrorDialog(resProv.getString(R.string.err_conn_host_field_required))
             return false
         }
-        if (mysqlConn.port < 0 || mysqlConn.port > 65535) {
+        if (!validator.connPortIsValid(mysqlConn.port)) {
             showErrorDialog(resProv.getString(R.string.err_conn_port_field_required))
             return false
         }
-        if (mysqlConn.user.trimmedLength() <= 0) {
+        if (!validator.connUserIsValid(mysqlConn.user)) {
             showErrorDialog(resProv.getString(R.string.err_conn_user_field_required))
             return false
         }
-        if (mysqlConn.pass.trimmedLength() <= 0) {
+        if (!validator.connPassIsValid(mysqlConn.pass)) {
             showErrorDialog(resProv.getString(R.string.err_conn_pass_field_required))
             return false
         }
-        if (mysqlConn.dbname.trimmedLength() <= 0) {
+        if (!validator.connDbnameIsValid(mysqlConn.dbname)) {
             showErrorDialog(resProv.getString(R.string.err_conn_dbname_field_required))
             return false
         }

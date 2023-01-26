@@ -1,9 +1,7 @@
 package com.infinity.devtools.providers
 
-import com.infinity.devtools.domain.resource.ResourcesProvider
+import android.content.res.Resources
 import com.infinity.devtools.utils.FileUtils
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
 import java.io.File
 import java.nio.file.Paths
 
@@ -47,5 +45,17 @@ object UTResourcesProvider {
             }
             // println("name: ($name) -> ($value)")
         }
+    }
+
+    /**
+     * Gets a resource string
+     */
+    fun getString(id: Int) : String {
+        if (stringsMap.containsKey(id)) {
+            stringsMap.get(key = id)
+        } else {
+            throw Resources.NotFoundException("string resource ID #$id Not found")
+        }
+        return ""
     }
 }

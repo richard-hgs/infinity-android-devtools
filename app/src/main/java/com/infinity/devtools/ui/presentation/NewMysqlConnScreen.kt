@@ -7,9 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.Button
-import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,10 +25,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.room.Room
 import com.infinity.devtools.R
 import com.infinity.devtools.constants.ConstantsDb.TABLE_MYSQL_CONN
+import com.infinity.devtools.di.validators.MysqlValidator
 import com.infinity.devtools.domain.database.AppDatabase
 import com.infinity.devtools.domain.database.MysqlConnDao_Impl
 import com.infinity.devtools.domain.repository.MysqlConnRepoImpl
-import com.infinity.devtools.domain.resource.ResourcesProvider
+import com.infinity.devtools.domain.resources.ResourcesProvider
+import com.infinity.devtools.domain.resources.ResourcesProviderImpl
 import com.infinity.devtools.ui.components.AppTextField
 import com.infinity.devtools.ui.components.ColumnScrollbar
 import com.infinity.devtools.ui.components.ProgressButton
@@ -231,7 +230,8 @@ fun PreviewNewMysqlConnScreen() {
                     Room.databaseBuilder(LocalContext.current, AppDatabase::class.java, TABLE_MYSQL_CONN).build()
                 )
             ),
-            ResourcesProvider(LocalContext.current)
+            ResourcesProviderImpl(LocalContext.current),
+            MysqlValidator()
         ),
         navigateBack = {
 

@@ -6,6 +6,8 @@ import com.infinity.devtools.domain.database.AppDatabase
 import com.infinity.devtools.domain.database.MysqlConnDao
 import com.infinity.devtools.domain.repository.MysqlConnRepo
 import com.infinity.devtools.domain.repository.MysqlConnRepoImpl
+import com.infinity.devtools.domain.resources.ResourcesProvider
+import com.infinity.devtools.domain.resources.ResourcesProviderImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -39,4 +41,10 @@ class AppModule {
     ): MysqlConnRepo = MysqlConnRepoImpl(
         connDao = mysqlConnDao
     )
+
+    @Provides
+    @Singleton
+    fun provideResourcesProvider(
+        context: MyApplication
+    ) : ResourcesProvider = ResourcesProviderImpl(context = context)
 }
