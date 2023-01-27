@@ -80,6 +80,7 @@ fun TransparentButton(
 
 @Composable
 fun ProgressButton(
+    modifier: Modifier = Modifier,
     type: SSButtonType,
     width: Dp = (-1).dp,
     height: Dp = (-1).dp,
@@ -118,7 +119,7 @@ fun ProgressButton(
     customLoadingPadding: Int = ZERO
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         // verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

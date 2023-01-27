@@ -29,7 +29,6 @@ import com.infinity.devtools.di.validators.MysqlValidator
 import com.infinity.devtools.domain.database.AppDatabase
 import com.infinity.devtools.domain.database.MysqlConnDao_Impl
 import com.infinity.devtools.domain.repository.MysqlConnRepoImpl
-import com.infinity.devtools.domain.resources.ResourcesProvider
 import com.infinity.devtools.domain.resources.ResourcesProviderImpl
 import com.infinity.devtools.ui.components.AppTextField
 import com.infinity.devtools.ui.components.ColumnScrollbar
@@ -166,11 +165,11 @@ fun NewMysqlConnScreen(
                     onChange = {
                         viewModel.updateDbName(it)
                     },
-                    imeAction = ImeAction.Next, // Show next as IME button
+                    imeAction = ImeAction.Done, // Show next as IME button
                     keyboardType = KeyboardType.Text, // Plain text keyboard
                     keyBoardActions = KeyboardActions(
-                        onNext = {
-                            focusManager.moveFocus(FocusDirection.Down)
+                        onDone = {
+                            focusManager.clearFocus()
                         }
                     ),
                     maxLength = 255
@@ -185,21 +184,22 @@ fun NewMysqlConnScreen(
                     // Perform action on click of button and make it's state to LOADING
                     submitButtonState = SSButtonState.LOADING
 
-                    lateinit var job : Job
-
-                    if (viewModel.mysqlConn.id == 0) {
+                    val job : Job = if (viewModel.mysqlConn.id == 0) {
                         // Insert this new connection
-                        job = viewModel.addConn(conn = viewModel.mysqlConn)
+                        viewModel.addConn(conn = viewModel.mysqlConn)
                     } else {
                         // Update connection
-                        job = viewModel.updateConn(conn = viewModel.mysqlConn)
+                        viewModel.updateConn(conn = viewModel.mysqlConn)
                     }
                     // Suspend parent coroutine until job is done
                     job.join()
 
+                    // Wait some progress
+                    delay(1000)
+
                     // Notify job result
                     val errDialogOpen = viewModel.errDialogOpen.value
-                    submitButtonState = if (errDialogOpen) SSButtonState.FAILIURE else SSButtonState.SUCCESS
+                    submitButtonState = if (errDialogOpen) SSButtonState.FAILURE else SSButtonState.SUCCESS
                     // Wait for job progress show
                     delay(1000)
                     if (!errDialogOpen) {

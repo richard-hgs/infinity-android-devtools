@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun AppTextField(
     modifier: Modifier = Modifier,
+    modifierLength: Modifier = Modifier,
     text: String,
     fontSize: TextUnit = 16.sp,
     placeholder: String,
@@ -88,7 +89,7 @@ fun AppTextField(
             text = "${text.length} / $maxLength",
             textAlign = TextAlign.End,
             style = MaterialTheme.typography.caption,
-            modifier = Modifier.fillMaxWidth().padding(end = 16.dp)
+            modifier = modifierLength.fillMaxWidth().padding(end = 16.dp)
         )
     }
 }

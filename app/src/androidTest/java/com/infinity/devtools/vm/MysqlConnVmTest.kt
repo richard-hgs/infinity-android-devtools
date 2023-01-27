@@ -1,32 +1,20 @@
-package com.infinity.devtools
+package com.infinity.devtools.vm
 
 import android.content.Context
-import android.view.View
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.core.app.ApplicationProvider.getApplicationContext
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.FailureHandler
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
+import com.infinity.devtools.R
 import com.infinity.devtools.di.validators.MysqlValidator
 import com.infinity.devtools.domain.database.AppDatabase
 import com.infinity.devtools.domain.repository.MysqlConnRepoImpl
 import com.infinity.devtools.domain.resources.ResourcesProviderImpl
-import com.infinity.devtools.ui.presentation.MainActivity
 import com.infinity.devtools.ui.vm.MysqlConnVm
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import org.hamcrest.Matcher
 import org.junit.Assert.*
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.model.MultipleFailureException.assertEmpty
 
 
 @RunWith(AndroidJUnit4::class)
@@ -34,18 +22,21 @@ class MysqlConnVmTest {
 
     @Before
     fun deleteConns() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
+//        val context = ApplicationProvider.getApplicationContext<Context>()
+//
+//        val appDatabase = AppDatabase.getDatabase(
+//            context = context
+//        )
+//        val mysqlConnVm = MysqlConnVm(
+//            repo = MysqlConnRepoImpl(
+//                connDao = appDatabase.getMysqlConnDao()
+//            ),
+//            resProv = ResourcesProviderImpl(context),
+//            validator = MysqlValidator()
+//        )
 
-        val appDatabase = AppDatabase.getDatabase(
-            context = context
-        )
-        val mysqlConnVm = MysqlConnVm(
-            repo = MysqlConnRepoImpl(
-                connDao = appDatabase.getMysqlConnDao()
-            ),
-            resProv = ResourcesProviderImpl(context),
-            validator = MysqlValidator()
-        )
+        // Delete all Mysql Connections
+
     }
 
     @Test

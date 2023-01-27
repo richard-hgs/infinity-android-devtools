@@ -54,8 +54,11 @@ android {
 }
 
 dependencies {
+    // Include .aar inside app libs dir
+    // implementation fileTree(dir: 'libs', include: ["*.aar"])
+
     implementation 'androidx.core:core-ktx:1.7.0'
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.3.1'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1'
     implementation 'androidx.activity:activity-compose:1.6.1'
     implementation "androidx.compose.ui:ui:1.3.3"
     implementation "androidx.compose.ui:ui-tooling-preview:1.3.3"
@@ -68,8 +71,9 @@ dependencies {
     testImplementation "org.mockito:mockito-inline:4.0.0"
     testImplementation "org.mockito.kotlin:mockito-kotlin:4.0.0"
     implementation "org.jetbrains.kotlin:kotlin-reflect:1.7.20"
-    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+    androidTestImplementation("androidx.test:core-ktx:1.5.0")
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:1.3.3"
     debugImplementation "androidx.compose.ui:ui-tooling:1.3.3"
     debugImplementation "androidx.compose.ui:ui-test-manifest:1.3.3"
@@ -87,8 +91,9 @@ dependencies {
     // To use Kotlin Symbol Processing (KSP)
     ksp "androidx.room:room-compiler:2.5.0"
 
-    // Custom Libs
-    implementation 'com.github.SimformSolutionsPvtLtd:SSJetPackComposeProgressButton:1.0.7'
+    // Custom Libs - Failiure renamed so we are using libs/.aar instead
+    // implementation 'com.github.SimformSolutionsPvtLtd:SSJetPackComposeProgressButton:1.0.7'
+    implementation files('libs/ssjetpackcomposeprogressbutton-release.aar')
 
     // Lottie vector animations
     implementation "com.airbnb.android:lottie-compose:5.2.0"

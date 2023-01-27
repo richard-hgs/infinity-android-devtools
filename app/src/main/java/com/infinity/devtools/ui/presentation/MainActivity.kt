@@ -7,7 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.navigation.compose.rememberNavController
 import com.infinity.devtools.ui.navigation.NavGraph
-import com.infinity.devtools.ui.theme.ArchitectureProjectTheme
+import com.infinity.devtools.ui.theme.AppTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -17,7 +17,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            ArchitectureProjectTheme {
+            AppTheme {
                 NavGraph(
                     navController = rememberNavController()
                 )

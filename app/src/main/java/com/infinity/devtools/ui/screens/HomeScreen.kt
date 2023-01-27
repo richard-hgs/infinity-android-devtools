@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.infinity.devtools.ui.theme.ArchitectureProjectTheme
+import com.infinity.devtools.ui.theme.AppTheme
 
 @Composable
 fun HomeScreen(navController: NavController) {
@@ -23,7 +23,7 @@ fun HomeScreen(navController: NavController) {
 @Preview(showBackground = true)
 @Composable
 fun HomePreview() {
-    ArchitectureProjectTheme {
+    AppTheme {
         HomeScreen(navController = rememberNavController())
     }
 }
