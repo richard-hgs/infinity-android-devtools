@@ -30,6 +30,7 @@ class MysqlConnVm @Inject constructor(
 
     val connections = repo.getMysqlConnsFromRoom()
 
+    @Suppress("unused")
     fun getConn(id: Int) = viewModelScope.launch(Dispatchers.IO) {
         mysqlConn = repo.getMysqlConnFromRoom(id) ?: mysqlConn
     }
@@ -59,6 +60,7 @@ class MysqlConnVm @Inject constructor(
         }
     }
 
+    @Suppress("unused")
     fun deleteConn(conn: MysqlConn) = viewModelScope.launch(Dispatchers.IO) {
         repo.deleteMysqlConnFromRoom(conn)
     }

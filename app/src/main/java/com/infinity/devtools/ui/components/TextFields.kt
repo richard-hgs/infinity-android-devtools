@@ -14,7 +14,11 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -25,6 +29,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,7 +51,8 @@ fun AppTextField(
     keyBoardActions: KeyboardActions = KeyboardActions(),
     isEnabled: Boolean = true,
     singleLine: Boolean = true,
-    maxLength: Int? = null
+    maxLength: Int? = null,
+    isPassword: Boolean = false,
 ) {
     var isFocused by remember { mutableStateOf(false) }
 
@@ -55,6 +61,10 @@ fun AppTextField(
             durationMillis = 300, delayMillis = 0
         )
     )
+
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
+
+
 
     CustomOutlinedTextField(
         modifier = modifier.onFocusChanged {
@@ -83,6 +93,17 @@ fun AppTextField(
         label = {
             Text(text = placeholder, style = TextStyle(fontSize = labelFontSize.sp, color = Color.Gray))
         },
+        visualTransformation = if (!isPassword || passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+        trailingIcon = if (isPassword) {
+            null
+//            {
+//                val image = if (passwordVisible)
+//                    Icons.Default.
+//                else Icons.Filled.VisibilityOff
+//            }
+        } else {
+            null
+        }
     )
     if (maxLength != null) {
         Text(

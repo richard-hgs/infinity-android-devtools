@@ -3,9 +3,11 @@
 package com.infinity.devtools.utils
 
 import android.view.View
+import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
 import androidx.test.espresso.matcher.ViewMatchers.isRoot
+import kotlinx.coroutines.*
 import org.hamcrest.Matcher
 import org.junit.Assert.assertEquals
 
@@ -36,9 +38,11 @@ object WaitFor {
         val startTime = System.currentTimeMillis()
         val endTime = startTime + millisTimeout
         var previousCheckTime = 0L
+        var currentVal: T? = null
         while(System.currentTimeMillis() < endTime) {
             if (System.currentTimeMillis() - previousCheckTime >= checkEvery) {
-                if (currentValue() == expectedValue) {
+                currentVal = currentValue()
+                if (currentVal == expectedValue) {
                     break
                 }
 
@@ -47,6 +51,45 @@ object WaitFor {
         }
 
         // Throw assertion error
-        assertEquals(expectedValue, currentValue())
+        assertEquals(expectedValue, currentVal)
+    }
+
+    /**
+     * Run specified thread until value matches or timeout reached
+     * @param composeTestRule Compose test rule of current test
+     * @param crDispatcher Coroutine dispatcher where valueChecker will be running
+     * @param checkEvery Amount of millis to check against value
+     * @param millisTimeout Max millis timeout to check against value
+     * @param expectedValue Value expected
+     * @param currentValue A callback that returns current value being checked
+     */
+    fun <T> valueCheckerBlocking(
+        composeTestRule: ComposeTestRule,
+        crDispatcher: CoroutineDispatcher = Dispatchers.IO,
+        checkEvery: Int = 0,
+        millisTimeout: Long = 5000,
+        expectedValue: T,
+        currentValue: () -> T
+    ) {
+        var conditionMatches = false
+        val crScope = CoroutineScope(Job() + crDispatcher)
+
+        crScope.launch(crDispatcher) {
+            valueChecker(
+                checkEvery,
+                millisTimeout,
+                expectedValue,
+                currentValue
+            )
+
+            // If an assertion is not thrown values matches
+            conditionMatches = true
+        }
+
+        // Wait until condition is matched
+        composeTestRule.waitUntil(
+            timeoutMillis = millisTimeout,
+            condition = { conditionMatches }
+        )
     }
 }

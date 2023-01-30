@@ -26,4 +26,7 @@ interface MysqlConnDao {
 
     @Delete
     fun deleteConn(entity: MysqlConn)
+
+    @Query("DELETE FROM $TABLE_MYSQL_CONN")
+    fun deleteAllConns()
 }

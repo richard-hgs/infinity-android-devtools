@@ -22,21 +22,16 @@ class MysqlConnVmTest {
 
     @Before
     fun deleteConns() {
-//        val context = ApplicationProvider.getApplicationContext<Context>()
-//
-//        val appDatabase = AppDatabase.getDatabase(
-//            context = context
-//        )
-//        val mysqlConnVm = MysqlConnVm(
-//            repo = MysqlConnRepoImpl(
-//                connDao = appDatabase.getMysqlConnDao()
-//            ),
-//            resProv = ResourcesProviderImpl(context),
-//            validator = MysqlValidator()
-//        )
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        val appDatabase = AppDatabase.getDatabase(
+            context = context
+        )
+
+        val mysqlConnDao = appDatabase.getMysqlConnDao()
 
         // Delete all Mysql Connections
-
+        mysqlConnDao.deleteAllConns()
     }
 
     @Test
@@ -131,6 +126,12 @@ class MysqlConnVmTest {
             job = mysqlConnVm.addConn(mysqlConnVm.mysqlConn)
             job.join()
             assertFalse(mysqlConnVm.errDialogOpen.value)
+
+            // Duplicated connection
+            job = mysqlConnVm.addConn(mysqlConnVm.mysqlConn)
+            job.join()
+            assertTrue(mysqlConnVm.errDialogOpen.value)
+            assertEquals(mysqlConnVm.errDialogMsg, context.getString(R.string.err_host_port_and_user_exists))
         }
     }
 }

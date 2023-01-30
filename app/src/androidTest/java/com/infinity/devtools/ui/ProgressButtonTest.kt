@@ -169,4 +169,55 @@ class ProgressButtonTest {
         )
         assertEquals(SSButtonState.IDLE, btnState)
     }
+
+    @Test
+    fun testDoubleClick() {
+        val btnText = "Some Text"
+        var btnClickCount = 0
+        var btnState : SSButtonState = SSButtonState.IDLE
+
+        // Start the app
+        composeTestRule.setContent {
+            AppTheme {
+                val coroutineScope = rememberCoroutineScope()
+                var submitButtonState by remember { mutableStateOf(SSButtonState.IDLE) }
+
+                btnState = submitButtonState
+
+                ProgressButton(
+                    type = SSButtonType.CIRCLE,
+                    onClick = {
+                        coroutineScope.launch {
+                            // Save click handled
+                            btnClickCount++
+
+                            // Test loading state
+                            submitButtonState = SSButtonState.LOADING
+
+                            // Wait for loading progress show
+                            delay(1000)
+
+                            // Show a success result
+                            submitButtonState = SSButtonState.SUCCESS
+                        }
+                    },
+                    assetColor = Color.White,
+                    buttonState = submitButtonState,
+                    setButtonState = { submitButtonState = it },
+                    text = btnText
+                )
+            }
+        }
+
+        // Wait for button visibility
+        onView(isRoot()).perform(WaitFor.sleep(500))
+
+        // Check if btn not clicked
+        assertEquals(0, btnClickCount)
+
+        // Perform double click and check if only one is handled
+        composeTestRule.onNodeWithText(btnText).performClick()
+        composeTestRule.onNodeWithText(btnText).performClick()
+        assertEquals(1, btnClickCount)
+    }
 }

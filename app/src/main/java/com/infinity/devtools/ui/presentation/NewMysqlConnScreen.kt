@@ -23,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.room.Room
+import com.airbnb.lottie.compose.*
 import com.infinity.devtools.R
 import com.infinity.devtools.constants.ConstantsDb.TABLE_MYSQL_CONN
 import com.infinity.devtools.di.validators.MysqlValidator
@@ -65,14 +66,18 @@ fun NewMysqlConnScreen(
                     .fillMaxWidth()
                     .verticalScroll(scrollState)
             ) {
-                Image(
-                    painter = painterResource(R.drawable.ic_mysql),
-                    contentDescription = "",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxWidth(fraction = 0.7f)
-                        .align(alignment = Alignment.CenterHorizontally)
+                val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.ic_mysql))
+                val progress by animateLottieCompositionAsState(
+                    composition = composition,
+                    speed = 2f,
+                    iterations = LottieConstants.IterateForever
                 )
-                Spacer(modifier = Modifier.height(height = spacing))
+                LottieAnimation(
+                    modifier = Modifier.size(200.dp)
+                        .align(Alignment.CenterHorizontally),
+                    composition = composition,
+                    progress = { progress },
+                )
                 AppTextField(
                     modifier = Modifier.fillMaxWidth(),
                     text = viewModel.mysqlConn.name,

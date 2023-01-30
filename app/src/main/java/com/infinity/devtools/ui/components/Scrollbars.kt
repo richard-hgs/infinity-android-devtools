@@ -8,6 +8,7 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.progressSemantics
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,10 +33,12 @@ enum class ScrollbarSelectionMode {
      * Enable selection in the whole scrollbar and thumb
      */
     Full,
+
     /**
      * Enable selection in the thumb
      */
     Thumb,
+
     /**
      * Disable selection
      */
@@ -57,6 +60,7 @@ fun ColumnScrollbar(
     rightSide: Boolean = true,
     thickness: Dp = 6.dp,
     padding: Dp = 2.dp,
+    thumbModifier: Modifier = Modifier,
     thumbMinHeight: Float = 0.1f,
     thumbColor: Color = Color(0xFF2A59B6),
     thumbSelectedColor: Color = Color(0xFF5281CA),
@@ -71,7 +75,7 @@ fun ColumnScrollbar(
     val isInAction = state.isScrollInProgress || isSelected
 
     val displacement by animateFloatAsState(
-        targetValue = if (isInAction) 0f else 14f, animationSpec = tween(
+            targetValue = if (isInAction) 0f else 14f, animationSpec = tween(
             durationMillis = if (isInAction) 75 else 500, delayMillis = if (isInAction) 100 else 500
         )
     )
@@ -86,6 +90,7 @@ fun ColumnScrollbar(
             rightSide = rightSide,
             thickness = thickness,
             padding = padding,
+            thumbModifier = thumbModifier,
             thumbMinHeight = thumbMinHeight,
             thumbColor = thumbColor,
             thumbSelectedColor = thumbSelectedColor,
@@ -118,6 +123,7 @@ fun ColumnScrollbar(
     rightSide: Boolean = true,
     thickness: Dp = 6.dp,
     padding: Dp = 8.dp,
+    thumbModifier: Modifier = Modifier,
     thumbMinHeight: Float = 0.1f,
     thumbColor: Color = Color(0xFF2A59B6),
     thumbSelectedColor: Color = Color(0xFF5281CA),
@@ -286,8 +292,10 @@ fun ColumnScrollbar(
                 .graphicsLayer {
                     translationX = (if (rightSide) displacement.dp else -displacement.dp).toPx()
                 }) {
+            println("DISPLACEMENT: ${displacement}")
             Box(
-                Modifier
+                thumbModifier
+                    .progressSemantics(displacement, -14f..14f)
                     .align(Alignment.TopEnd)
                     .graphicsLayer {
                         translationY = constraints.maxHeight.toFloat() * normalizedOffsetPosition
