@@ -4,9 +4,13 @@
     <string name="app_email">devtools@email.com</string>
 
     <!-- ICONS CONTENT DESCRIPTION STRINGS -->
+    <string name="ic_back">Back Icon</string>
     <string name="ic_menu">Menu Icon</string>
     <string name="ic_settings">Settings Icon</string>
     <string name="ic_profile">Profile Icon</string>
+
+    <!-- SCREENS TITLE -->
+    <string name="title_new_mysql_conn">New Connection</string>
 
     <!-- OTHER STRINGS -->
     <string name="home">Home</string>

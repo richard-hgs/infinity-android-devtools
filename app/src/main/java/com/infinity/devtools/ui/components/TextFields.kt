@@ -14,9 +14,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -26,11 +23,9 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.*
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
@@ -54,6 +49,73 @@ fun AppTextField(
     maxLength: Int? = null,
     isPassword: Boolean = false,
 ) {
+    // Fix caret position at first time TextFieldValue is filled text selection is set to zero.
+    var lastFixCaretValue by remember { mutableStateOf(text) }
+    // Holds the latest internal TextFieldValue state. We need to keep it to have the correct value
+    // of the composition.
+    var textFieldValueState by remember { mutableStateOf(TextFieldValue(text = text)) }
+    // Holds the latest TextFieldValue that BasicTextField was recomposed with. We couldn't simply
+    // pass `TextFieldValue(text = value)` to the CoreTextField because we need to preserve the
+    // composition.
+    val textFieldValue = textFieldValueState.copy(text = text)
+    // Last String value that either text field was recomposed with or updated in the onValueChange
+    // callback. We keep track of it to prevent calling onValueChange(String) for same String when
+    // CoreTextField's onValueChange is called multiple times without recomposition in between.
+    var lastTextValue by remember(text) { mutableStateOf(text) }
+
+    // Each time Text changes
+    LaunchedEffect(text) {
+        // Check if caret position should be fixed
+        if (text.length > lastFixCaretValue.length) {
+            textFieldValueState = textFieldValueState.copy(text = text, selection = TextRange(text.length))
+        }
+        lastFixCaretValue = text
+    }
+
+    AppTextField(
+        modifier = modifier,
+        modifierLength = modifierLength,
+        text = textFieldValue,
+        fontSize = fontSize,
+        placeholder = placeholder,
+        leadingIcon = leadingIcon,
+        onChange = { newTextFieldValueState ->
+            textFieldValueState = newTextFieldValueState
+
+            val stringChangedSinceLastInvocation = lastTextValue != newTextFieldValueState.text
+            lastTextValue = newTextFieldValueState.text
+
+            if (stringChangedSinceLastInvocation) {
+                onChange(newTextFieldValueState.text)
+            }
+        },
+        imeAction = imeAction,
+        keyboardType = keyboardType,
+        keyBoardActions = keyBoardActions,
+        isEnabled = isEnabled,
+        singleLine = singleLine,
+        maxLength = maxLength,
+        isPassword = isPassword,
+    )
+}
+
+@Composable
+fun AppTextField(
+    modifier: Modifier = Modifier,
+    modifierLength: Modifier = Modifier,
+    text: TextFieldValue,
+    fontSize: TextUnit = 16.sp,
+    placeholder: String,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    onChange: (TextFieldValue) -> Unit = {},
+    imeAction: ImeAction = ImeAction.Next,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    keyBoardActions: KeyboardActions = KeyboardActions(),
+    isEnabled: Boolean = true,
+    singleLine: Boolean = true,
+    maxLength: Int? = null,
+    isPassword: Boolean = false,
+) {
     var isFocused by remember { mutableStateOf(false) }
 
     val labelFontSize by animateIntAsState(
@@ -62,9 +124,7 @@ fun AppTextField(
         )
     )
 
-    var passwordVisible by rememberSaveable { mutableStateOf(false) }
-
-
+    val passwordVisible by rememberSaveable { mutableStateOf(false) }
 
     CustomOutlinedTextField(
         modifier = modifier.onFocusChanged {
@@ -73,7 +133,9 @@ fun AppTextField(
         value = text,
         onValueChange = {
             if (maxLength != null) {
-                onChange(it.take(maxLength))
+                onChange(
+                    it.copy(text = it.text.take(maxLength))
+                )
             } else {
                 onChange(it)
             }
@@ -107,7 +169,7 @@ fun AppTextField(
     )
     if (maxLength != null) {
         Text(
-            text = "${text.length} / $maxLength",
+            text = "${text.text.length} / $maxLength",
             textAlign = TextAlign.End,
             style = MaterialTheme.typography.caption,
             modifier = modifierLength.fillMaxWidth().padding(end = 16.dp)
@@ -117,8 +179,8 @@ fun AppTextField(
 
 @Composable
 fun CustomOutlinedTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
+    value: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     readOnly: Boolean = false,
@@ -174,7 +236,7 @@ fun CustomOutlinedTextField(
         maxLines = maxLines,
         decorationBox = @Composable { innerTextField ->
             TextFieldDefaults.OutlinedTextFieldDecorationBox(
-                value = value,
+                value = value.text,
                 visualTransformation = visualTransformation,
                 innerTextField = innerTextField,
                 placeholder = placeholder,
@@ -205,7 +267,7 @@ fun CustomOutlinedTextField(
 @Composable
 fun TextFieldPreview() {
     CustomOutlinedTextField(
-        value = "",
+        value = TextFieldValue(text = ""),
         onValueChange = {
 
         },
