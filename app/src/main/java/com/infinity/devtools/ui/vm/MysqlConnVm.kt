@@ -23,7 +23,7 @@ class MysqlConnVm @Inject constructor(
     private val resProv: ResourcesProvider,
     private val validator: MysqlValidator
 ): ViewModel() {
-    var mysqlConn by mutableStateOf(MysqlConn(0, NO_VALUE, NO_VALUE, 0, NO_VALUE, NO_VALUE, NO_VALUE))
+    var mysqlConn by mutableStateOf(MysqlConn(0, NO_VALUE, NO_VALUE, -1, NO_VALUE, NO_VALUE, NO_VALUE))
 
     var errDialogOpen = mutableStateOf(false)
     var errDialogMsg by mutableStateOf("")
@@ -118,7 +118,7 @@ class MysqlConnVm @Inject constructor(
         try {
             mysqlConn = mysqlConn.copy(
                 port = port.ifEmpty {
-                    "0"
+                    "-1"
                 }.toInt()
             )
         } catch (e: NumberFormatException) {

@@ -1,4 +1,4 @@
-@file:Suppress("FunctionName")
+@file:Suppress("FunctionName", "UnresolvedReferences")
 
 package com.infinity.devtools.ui.components
 

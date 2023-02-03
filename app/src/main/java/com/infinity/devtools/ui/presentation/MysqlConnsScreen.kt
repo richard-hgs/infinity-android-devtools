@@ -5,6 +5,7 @@ package com.infinity.devtools.ui.presentation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.MaterialTheme.typography
 import androidx.compose.material.icons.Icons
@@ -14,11 +15,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ChainStyle
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.room.Room
 import com.airbnb.lottie.compose.*
@@ -38,6 +46,7 @@ import com.infinity.devtools.ui.vm.MysqlConnVm
 fun ConnListItem(
     conn: MysqlConn,
     navigateToUpdateMysqlConnScreen: (connId: Int) -> Unit,
+    navigateToMysqlDbHomeScreen: (connId: Int) -> Unit
 ) {
     Row {
         AppSurface(
@@ -45,27 +54,60 @@ fun ConnListItem(
                 .padding(bottom = 4.dp),
             elevation = 4.dp,
             onClick = {
-                navigateToUpdateMysqlConnScreen(conn.id)
+                navigateToMysqlDbHomeScreen(conn.id)
             },
             indication = rememberRipple(color = MaterialTheme.colors.primarySurface)
         ) {
             Row(
                 modifier = Modifier.padding(all = 4.dp)
             ) {
-                val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.ic_server_on))
-                val progress by animateLottieCompositionAsState(
-                    composition = composition,
+                val composition1 by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.ic_server_on))
+                val progress1 by animateLottieCompositionAsState(
+                    composition = composition1,
                     speed = 2f,
                     iterations = LottieConstants.IterateForever
                 )
                 LottieAnimation(
                     modifier = Modifier.size(48.dp),
-                    composition = composition,
-                    progress = { progress },
+                    composition = composition1,
+                    progress = { progress1 },
                 )
-                Column {
-                    Text(text = conn.name, style = typography.h6)
-                    Text(text = "${conn.host}:${conn.port}", style = typography.caption)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text(text = conn.name, style = typography.h6)
+                        Text(text = "${conn.host}:${conn.port}", style = typography.caption)
+                    }
+                    AppSurface(
+                        modifier = Modifier.size(48.dp),
+                        shape = CircleShape,
+                        indication = rememberRipple(color = MaterialTheme.colors.primarySurface),
+                        content = {
+                            val composition2 by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.ic_edit_2))
+                            val progress2 by animateLottieCompositionAsState(
+                                composition = composition2,
+                                speed = 2f,
+                                iterations = 2
+                            )
+                            LottieAnimation(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .rotate(90f)
+                                    .graphicsLayer(
+                                        scaleX = 1.3f,
+                                        scaleY = 1.3f,
+                                    ),
+                                composition = composition2,
+                                progress = { progress2 },
+                                contentScale = ContentScale.Crop
+                            )
+                        },
+                        onClick = {
+                            navigateToUpdateMysqlConnScreen(conn.id)
+                        },
+                    )
                 }
             }
         }
@@ -76,7 +118,8 @@ fun ConnListItem(
 fun MysqlConnsScreen(
     viewModel: MysqlConnVm = hiltViewModel(),
     navigateToUpdateMysqlConnScreen: (connId: Int) -> Unit,
-    navigateToInsertMysqlConnScreen: () -> Unit
+    navigateToInsertMysqlConnScreen: () -> Unit,
+    navigateToMysqlDbHomeScreen: (connId: Int) -> Unit,
 ) {
     val connections by viewModel.connections.collectAsState(
         initial = emptyList()
@@ -100,22 +143,71 @@ fun MysqlConnsScreen(
             )
         },
         content = { paddingValues ->
-            LazyColumn(
-                    contentPadding = PaddingValues(
+            ConstraintLayout(
+                modifier = Modifier.fillMaxSize().padding(
+                    paddingValues = PaddingValues(
                         start = paddingValues.calculateStartPadding(LocalLayoutDirection.current) + 8.dp,
                         top = paddingValues.calculateTopPadding() + 8.dp,
                         end = paddingValues.calculateEndPadding(LocalLayoutDirection.current) + 8.dp,
                         bottom = paddingValues.calculateBottomPadding() + 8.dp
                     )
+                ),
+            ) {
+                val (listRef, imgEmptyRef, tvEmptyRef) = createRefs()
+                createVerticalChain(imgEmptyRef, tvEmptyRef, chainStyle = ChainStyle.Packed)
+
+                LazyColumn(
+                    modifier = Modifier.constrainAs(listRef) {
+                        top.linkTo(parent.top)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                        bottom.linkTo(parent.bottom)
+                        height = Dimension.fillToConstraints
+                        width = Dimension.fillToConstraints
+                    },
                 ) {
                     items(connections) { connAt ->
                         ConnListItem(
                             conn = connAt,
-                            navigateToUpdateMysqlConnScreen = navigateToUpdateMysqlConnScreen
+                            navigateToUpdateMysqlConnScreen = navigateToUpdateMysqlConnScreen,
+                            navigateToMysqlDbHomeScreen = navigateToMysqlDbHomeScreen
                         )
                     }
                 }
+
+                if (connections.isEmpty()) {
+                    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.ic_canada_empty_state))
+                    val progress by animateLottieCompositionAsState(
+                        composition = composition,
+                        speed = 2f,
+                        iterations = LottieConstants.IterateForever
+                    )
+                    LottieAnimation(
+                        modifier = Modifier
+                            .width(200.dp)
+                            .height(150.dp)
+                            .constrainAs(imgEmptyRef) {
+                                top.linkTo(parent.top)
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                                bottom.linkTo(tvEmptyRef.top)
+                        },
+                        composition = composition,
+                        progress = { progress },
+                    )
+                    Text(
+                        modifier = Modifier.constrainAs(tvEmptyRef) {
+                            top.linkTo(imgEmptyRef.bottom)
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                            bottom.linkTo(parent.bottom)
+                        },
+                        text = stringResource(R.string.conn_list_empty),
+                        color = Color.Gray
+                    )
+                }
             }
+        }
     )
 }
 
@@ -132,12 +224,9 @@ fun PreviewMysqlConnScreen() {
             ResourcesProviderImpl(LocalContext.current),
             MysqlValidator()
         ),
-        navigateToInsertMysqlConnScreen = {
-
-        },
-        navigateToUpdateMysqlConnScreen = {
-
-        }
+        navigateToInsertMysqlConnScreen = {},
+        navigateToUpdateMysqlConnScreen = {},
+        navigateToMysqlDbHomeScreen = {}
     )
 }
 
@@ -155,7 +244,8 @@ fun PreviewConnListItem() {
                 pass = "My Password",
                 dbname = "My dbname"
             ),
-            navigateToUpdateMysqlConnScreen = {}
+            navigateToUpdateMysqlConnScreen = {},
+            navigateToMysqlDbHomeScreen = {}
         )
     }
 }

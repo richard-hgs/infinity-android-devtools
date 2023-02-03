@@ -1,3 +1,5 @@
+@file:Suppress("FunctionName")
+
 package com.infinity.devtools.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
@@ -80,8 +82,6 @@ fun ColumnScrollbar(
         )
     )
 
-//    Log.d("Scrollbars", "isInAction: $isInAction - isSelected: $isSelected - isScrollInProgress: ${state.isScrollInProgress} - scrollPos: ${state.value}")
-
     if (!enabled) content(Modifier.padding(end = max(0.dp, 14.dp - displacement.dp)))
     else BoxWithConstraints(modifier = modifier) {
         content(Modifier.padding(end = max(0.dp, 14.dp - displacement.dp)))
@@ -138,8 +138,6 @@ fun ColumnScrollbar(
 ) {
     val coroutineScope = rememberCoroutineScope()
 
-    // var isSelected by remember { mutableStateOf(false) }
-
     var dragOffset by remember { mutableStateOf(0f) }
 
     val fullHeightDp = with(LocalDensity.current) { state.maxValue.toDp() + visibleHeightDp }
@@ -195,19 +193,11 @@ fun ColumnScrollbar(
         }
     }
 
-    // val isInAction = state.isScrollInProgress || isSelected
-
     val alpha by animateFloatAsState(
         targetValue = if (isInAction) 1f else 0f, animationSpec = tween(
             durationMillis = if (isInAction) 75 else 500, delayMillis = if (isInAction) 100 else 500
         )
     )
-
-//    val displacement by animateFloatAsState(
-//        targetValue = if (isInAction) 0f else 14f, animationSpec = tween(
-//            durationMillis = if (isInAction) 75 else 500, delayMillis = if (isInAction) 0 else 500
-//        )
-//    )
 
     BoxWithConstraints(
         Modifier
@@ -292,7 +282,6 @@ fun ColumnScrollbar(
                 .graphicsLayer {
                     translationX = (if (rightSide) displacement.dp else -displacement.dp).toPx()
                 }) {
-            println("DISPLACEMENT: ${displacement}")
             Box(
                 thumbModifier
                     .progressSemantics(displacement, -14f..14f)

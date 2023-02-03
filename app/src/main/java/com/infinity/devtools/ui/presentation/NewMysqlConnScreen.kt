@@ -71,33 +71,6 @@ fun NewMysqlConnScreen(
                  homeIcon = Icons.Filled.ArrowBack,
                  onHomeClick = navigateBack
              )
-//            TopAppBar(
-//                title = {
-//                    Text(text = stringResource(R.string.app_name))
-//                },
-//                navigationIcon = {
-//                    Button(
-//                        shape = CircleShape,
-//                        content = {
-//                            Icon(
-//                                imageVector = Icons.Filled.ArrowBack,
-//                                contentDescription = stringResource(R.string.ic_back)
-//                            )
-//                        },
-//                        onClick = navigateBack,
-//                        colors = ButtonDefaults.buttonColors(
-//                            backgroundColor = Color.Transparent,
-//                            contentColor = Color.White
-//                        ),
-//                        elevation = ButtonDefaults.elevation(
-//                            defaultElevation = 0.dp,
-//                            pressedElevation = 0.dp,
-//                            hoveredElevation = 0.dp,
-//                            focusedElevation = 0.dp
-//                        ),
-//                    )
-//                }
-//            )
         },
         content = { paddingValues ->
             Column(
@@ -168,7 +141,7 @@ fun NewMysqlConnScreen(
                         Spacer(modifier = Modifier.height(height = spacing))
                         AppTextField(
                             modifier = Modifier.fillMaxWidth(),
-                            text = viewModel.mysqlConn.port.toString(),
+                            text = if (viewModel.mysqlConn.port != -1) viewModel.mysqlConn.port.toString() else "",
                             placeholder = stringResource(R.string.conn_port),
                             onChange = {
                                 viewModel.updatePort(it)

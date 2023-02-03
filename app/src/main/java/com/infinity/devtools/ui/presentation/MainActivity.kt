@@ -5,47 +5,41 @@ package com.infinity.devtools.ui.presentation
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.navigation.compose.rememberNavController
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.*
+import com.airbnb.lottie.compose.*
+import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.infinity.devtools.ui.navigation.NavGraph
 import com.infinity.devtools.ui.theme.AppTheme
 import dagger.hilt.android.AndroidEntryPoint
 
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             AppTheme {
                 NavGraph(
-                    navController = rememberNavController()
+                    navController = rememberAnimatedNavController()
                 )
             }
         }
-
-//        setContent {
-//            ArchitectureProjectTheme {
-//                // A surface container using the 'background' color from the theme
-//                Surface(
-//                    modifier = Modifier.fillMaxSize(),
-//                    color = MaterialTheme.colors.background
-//                ) {
-//                    Content()
-//                }
-//            }
-//        }
     }
 }
-//
+
 //@Preview(showBackground = true)
 //@Composable
 //fun DefaultPreview() {
-//    ArchitectureProjectTheme {
-//        Content(preview = true)
+//    AppTheme {
+//        MotionLayoutTest()
 //    }
 //}
-//
+
 //@Preview(showBackground = true)
 //@Composable
 //fun DrawerPreview() {

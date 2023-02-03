@@ -23,6 +23,7 @@
     <string name="conn_pass">Pass</string>
     <string name="conn_dbname">Database Name</string>
     <string name="save_conn">Save Connection</string>
+    <string name="conn_list_empty">Connections are empty…</string>
 
     <!-- MYSQL SCREEN ERRORS -->
     <string name="err_host_port_and_user_exists">Host, Port and User already exists.</string>
