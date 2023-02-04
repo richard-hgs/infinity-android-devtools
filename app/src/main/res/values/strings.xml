@@ -8,12 +8,18 @@
     <string name="ic_menu">Menu Icon</string>
     <string name="ic_settings">Settings Icon</string>
     <string name="ic_profile">Profile Icon</string>
+    <string name="ic_info">Info Icon</string>
+    <string name="ic_delete">Delete Icon</string>
 
     <!-- SCREENS TITLE -->
     <string name="title_new_mysql_conn">New Connection</string>
 
     <!-- OTHER STRINGS -->
     <string name="home">Home</string>
+
+    <!-- SNACK BAR MESSAGES -->
+    <string name="n_items_deleted">deleted</string>
+    <string name="undo">Undo</string>
 
     <!-- MYSQL SCREEN -->
     <string name="conn_name">Connection Name</string>

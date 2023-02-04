@@ -37,9 +37,9 @@ class MysqlConnVm @Inject constructor(
 
     fun addConn(conn: MysqlConn) = viewModelScope.launch(Dispatchers.IO) {
         try {
-            val exists = repo.getMysqlConnFromRoom(mysqlConn.host, mysqlConn.port, mysqlConn.user)
+            val exists = repo.getMysqlConnFromRoom(conn.host, conn.port, conn.user)
             if (exists == null) {
-                if (validateFields()) {
+                if (validateFields(conn)) {
                     repo.addMysqlConnToRoom(conn)
                 }
             } else {
@@ -52,7 +52,7 @@ class MysqlConnVm @Inject constructor(
 
     fun updateConn(conn: MysqlConn) = viewModelScope.launch(Dispatchers.IO) {
         try {
-            if (validateFields()) {
+            if (validateFields(conn)) {
                 repo.updateMysqlConnInRoom(conn)
             }
         } catch (e: SQLiteConstraintException) {
@@ -60,34 +60,33 @@ class MysqlConnVm @Inject constructor(
         }
     }
 
-    @Suppress("unused")
     fun deleteConn(conn: MysqlConn) = viewModelScope.launch(Dispatchers.IO) {
         repo.deleteMysqlConnFromRoom(conn)
     }
 
     // ================================ VALIDATORS ===================================
-    private fun validateFields() : Boolean {
-        if (!validator.connNameIsValid(mysqlConn.name)) {
+    private fun validateFields(conn: MysqlConn) : Boolean {
+        if (!validator.connNameIsValid(conn.name)) {
             showErrorDialog(resProv.getString(R.string.err_conn_name_field_required))
             return false
         }
-        if (!validator.connHostIsValid(mysqlConn.host)) {
+        if (!validator.connHostIsValid(conn.host)) {
             showErrorDialog(resProv.getString(R.string.err_conn_host_field_required))
             return false
         }
-        if (!validator.connPortIsValid(mysqlConn.port)) {
+        if (!validator.connPortIsValid(conn.port)) {
             showErrorDialog(resProv.getString(R.string.err_conn_port_field_required))
             return false
         }
-        if (!validator.connUserIsValid(mysqlConn.user)) {
+        if (!validator.connUserIsValid(conn.user)) {
             showErrorDialog(resProv.getString(R.string.err_conn_user_field_required))
             return false
         }
-        if (!validator.connPassIsValid(mysqlConn.pass)) {
+        if (!validator.connPassIsValid(conn.pass)) {
             showErrorDialog(resProv.getString(R.string.err_conn_pass_field_required))
             return false
         }
-        if (!validator.connDbnameIsValid(mysqlConn.dbname)) {
+        if (!validator.connDbnameIsValid(conn.dbname)) {
             showErrorDialog(resProv.getString(R.string.err_conn_dbname_field_required))
             return false
         }
@@ -142,5 +141,9 @@ class MysqlConnVm @Inject constructor(
         mysqlConn = mysqlConn.copy(
             dbname = dbname
         )
+    }
+
+    fun undoDeletion(conn: MysqlConn) {
+        addConn(conn)
     }
 }
