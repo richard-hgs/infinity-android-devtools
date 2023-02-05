@@ -43,4 +43,6 @@
     <!-- ERROR DIALOG -->
     <string name="err_dialog_warning">Warning</string>
     <string name="err_dialog_ok">OK</string>
+
+
 </resources>
