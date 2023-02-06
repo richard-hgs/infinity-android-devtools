@@ -16,3 +16,6 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Dev Tools"
 include ':app'
+include ':mysql-processor'
+include ':mysql-annotation'
+include ':mysql'

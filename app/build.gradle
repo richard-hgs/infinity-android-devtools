@@ -8,6 +8,19 @@ plugins {
 }
 
 android {
+    // Load localProperties file to get non public debug server data
+    /*
+       NOTE: You can change to your test server the information inside project root file: "local.properties"
+       by creating variables below:
+       db_name=MyDbName
+       db_host=my.host.com
+       db_port=3306
+       db_user=my_db_user_name
+       db_pass=my_db_pass
+     */
+    def localProperties = new Properties()
+    localProperties.load(new FileInputStream(rootProject.file("local.properties")))
+
     // Application root namespace where files begin
     namespace 'com.infinity.devtools'
     compileSdk 33
@@ -26,6 +39,13 @@ android {
     }
 
     buildTypes { // Application build types configurations
+        debug {
+            buildConfigField("String", "DB_NAME", "\"" + localProperties['db_name'] + "\"")
+            buildConfigField("String", "DB_HOST", "\"" + localProperties['db_host'] + "\"")
+            buildConfigField("Integer", "DB_PORT", "" + localProperties['db_port'] + "")
+            buildConfigField("String", "DB_USER", "\"" + localProperties['db_user'] + "\"")
+            buildConfigField("String", "DB_PASS", "\"" + localProperties['db_pass'] + "\"")
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -51,6 +71,9 @@ android {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
+    }
+    sourceSets.configureEach { // Allow generated ksp kotlin to be used
+        kotlin.srcDir("$buildDir/generated/ksp/$name/kotlin/")
     }
 }
 
@@ -93,7 +116,11 @@ dependencies {
     // Custom Libs - Failiure renamed so we are using libs/.aar instead
     // implementation 'com.github.SimformSolutionsPvtLtd:SSJetPackComposeProgressButton:1.0.7'
     implementation files('libs/ssjetpackcomposeprogressbutton-release.aar')
-    implementation files('libs/mysql-connector-j-8.0.32.jar')
+
+    // Mysql
+    implementation project(":mysql")
+    implementation project(":mysql-annotation")
+    ksp project(":mysql-processor")
 
     // Lottie vector animations
     implementation "com.airbnb.android:lottie-compose:5.2.0"

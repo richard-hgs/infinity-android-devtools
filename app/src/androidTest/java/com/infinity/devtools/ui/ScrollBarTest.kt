@@ -1,23 +1,20 @@
 package com.infinity.devtools.ui
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Text
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.infinity.devtools.R
 import com.infinity.devtools.ui.components.ColumnScrollbar
 import com.infinity.devtools.ui.theme.AppTheme
 import com.infinity.devtools.utils.WaitFor
@@ -71,61 +68,11 @@ class ScrollBarTest {
                                 .fillMaxWidth()
                                 .verticalScroll(scrollState)
                         ) {
-                            Image(
-                                painter = painterResource(R.drawable.ic_mysql),
-                                contentDescription = "",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxWidth(fraction = 0.7f)
-                                    .align(alignment = Alignment.CenterHorizontally)
-                            )
-                            Image(
-                                painter = painterResource(R.drawable.ic_mysql),
-                                contentDescription = "",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxWidth(fraction = 0.7f)
-                                    .align(alignment = Alignment.CenterHorizontally)
-                            )
-                            Image(
-                                painter = painterResource(R.drawable.ic_mysql),
-                                contentDescription = "",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxWidth(fraction = 0.7f)
-                                    .align(alignment = Alignment.CenterHorizontally)
-                            )
-                            Image(
-                                painter = painterResource(R.drawable.ic_mysql),
-                                contentDescription = "",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxWidth(fraction = 0.7f)
-                                    .align(alignment = Alignment.CenterHorizontally)
-                            )
-                            Image(
-                                painter = painterResource(R.drawable.ic_mysql),
-                                contentDescription = "",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxWidth(fraction = 0.7f)
-                                    .align(alignment = Alignment.CenterHorizontally)
-                            )
-                            Image(
-                                painter = painterResource(R.drawable.ic_mysql),
-                                contentDescription = "",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxWidth(fraction = 0.7f)
-                                    .align(alignment = Alignment.CenterHorizontally)
-                            )
-                            Image(
-                                painter = painterResource(R.drawable.ic_mysql),
-                                contentDescription = "",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxWidth(fraction = 0.7f)
-                                    .align(alignment = Alignment.CenterHorizontally)
-                            )
-                            Image(
-                                painter = painterResource(R.drawable.ic_mysql),
-                                contentDescription = "",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxWidth(fraction = 0.7f)
-                                    .align(alignment = Alignment.CenterHorizontally)
+                            Text(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(2000.dp),
+                                text = "lorem ipsum 2000 dp"
                             )
                         }
                     }

@@ -1,4 +1,4 @@
-package com.infinity.devtools.data.model
+package com.infinity.mysql
 
 import java.sql.ResultSet
 import java.sql.Statement

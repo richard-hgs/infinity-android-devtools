@@ -1,6 +1,5 @@
-package com.infinity.devtools.domain.odbc
+package com.infinity.mysql
 
-import com.infinity.devtools.data.model.OdbcResult
 import com.mysql.cj.exceptions.ConnectionIsClosedException
 import java.sql.SQLException
 

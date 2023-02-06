@@ -4,8 +4,8 @@ import android.content.Context
 import com.infinity.devtools.MyApplication
 import com.infinity.devtools.domain.database.AppDatabase
 import com.infinity.devtools.domain.database.MysqlConnDao
-import com.infinity.devtools.domain.odbc.MysqlOdbc
-import com.infinity.devtools.domain.odbc.MysqlOdbcImpl
+import com.infinity.mysql.MysqlOdbc
+import com.infinity.mysql.MysqlOdbcImpl
 import com.infinity.devtools.domain.repository.MysqlConnRepo
 import com.infinity.devtools.domain.repository.MysqlConnRepoImpl
 import com.infinity.devtools.domain.resources.ResourcesProvider
