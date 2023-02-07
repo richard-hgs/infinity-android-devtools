@@ -63,7 +63,7 @@ class DatabaseGenerator(
                             .apply {
                                 addModifiers(KModifier.OVERRIDE)
                             }
-                            .addStatement("return MysqlDaoImpl()")
+                            .addStatement("return MysqlDao_Impl()")
                             .returns(ksFunc.returnType!!.resolve().toTypeName(TypeParameterResolver.EMPTY))
                             .build()
                     })

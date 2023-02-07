@@ -1,0 +1,48 @@
+package com.infinity.mysql.processor.generator
+
+import com.google.devtools.ksp.getDeclaredFunctions
+import com.google.devtools.ksp.processing.CodeGenerator
+import com.google.devtools.ksp.processing.KSPLogger
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.ksp.TypeParameterResolver
+import com.squareup.kotlinpoet.ksp.toTypeName
+import com.squareup.kotlinpoet.ksp.writeTo
+
+/**
+ * Created by richard on 06/02/2023 22:59
+ *
+ */
+class DaoGenerator(
+    private val logger: KSPLogger,
+    private val codeGenerator: CodeGenerator
+) {
+
+    fun generate(
+        annotatedClass: KSClassDeclaration
+    ) {
+        val packageName = annotatedClass.packageName.asString()
+        val implName = "${annotatedClass.simpleName.asString()}_Impl"
+        val superType = annotatedClass.asType(emptyList()).toTypeName(TypeParameterResolver.EMPTY)
+        val superFunctions = annotatedClass.getDeclaredFunctions()
+
+        // code generation logic
+        val fileSpec = FileSpec.builder(
+            packageName = packageName, fileName = implName
+        ).apply {
+            addType(
+                TypeSpec.classBuilder(implName)
+                    .addSuperinterface(superType)
+                    .primaryConstructor(FunSpec.constructorBuilder().build())
+                    .build()
+            )
+        }.build()
+
+        fileSpec.writeTo(
+            codeGenerator = codeGenerator,
+            aggregating = false
+        )
+    }
+}

@@ -6,7 +6,9 @@ import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.validate
+import com.infinity.mysql.annotation.Dao
 import com.infinity.mysql.annotation.Database
+import com.infinity.mysql.processor.visitor.DaoVisitor
 import com.infinity.mysql.processor.visitor.DatabaseVisitor
 
 /**
@@ -28,41 +30,50 @@ class DatabaseFactoryProcessor(
     codeGenerator: CodeGenerator
 ) : SymbolProcessor {
 
-    private val visitor = DatabaseVisitor(logger, codeGenerator)
+    private val databaseVisitor = DatabaseVisitor(logger, codeGenerator)
+    private val daoVisitor = DaoVisitor(logger, codeGenerator)
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         logger.info("DatabaseFactoryProcessor was invoked.")
 
         // Filter through all application symbols only the symbols of our annotations
         var unresolvedSymbols: List<KSAnnotated> = emptyList()
-        val annotationName = Database::class.qualifiedName
 
-        if (annotationName != null) {
-            // getSymbolsWithAnnotation Fetch all the symbols annotated with FragmentFactory annotation
-            // ou can also use getClassDeclarationByName, getDeclarationsFromPackage when your processor
-            // relies on logic outside annotation targets.
-            val resolved = resolver
-                .getSymbolsWithAnnotation(annotationName)
-                .toList()
+        // getSymbolsWithAnnotation Fetch all the symbols annotated with Database annotation
+        // ou can also use getClassDeclarationByName, getDeclarationsFromPackage when your processor
+        // relies on logic outside annotation targets.
+        val databaseSymbols = resolver
+            .getSymbolsWithAnnotation(Database::class.qualifiedName!!)
+            .toList()
 
-            // Here you use the default validate function offered by KSP to filter symbols in the
-            // scope that can be resolved. This is done internally using a KSValidateVisitor that
-            // visits each declaration and resolves all type parameters.
-            val validatedSymbols = resolved.filter { it.validate() }.toList()
-            validatedSymbols
-                .filter {
-                    // Add more validations
-                    true
-                }
-                .forEach {
-                    // Visit and process this symbol
-                    it.accept(visitor, Unit)
-                }
+        val daoSymbols = resolver
+            .getSymbolsWithAnnotation(Dao::class.qualifiedName!!)
+            .toList()
 
-            // Finally, you return all the unresolved symbols that would need more rounds. In the current example,
-            // this would be an empty list because all the symbols should resolve in the first round.
-            unresolvedSymbols = resolved - validatedSymbols
-        }
+        // Here you use the default validate function offered by KSP to filter symbols in the
+        // scope that can be resolved. This is done internally using a KSValidateVisitor that
+        // visits each declaration and resolves all type parameters.
+        val validatedDatabaseSymbols = databaseSymbols.filter {
+            it.validate()
+        }.toList()
+        validatedDatabaseSymbols
+            .forEach {
+                // Visit and process this symbol
+                it.accept(databaseVisitor, Unit)
+            }
+
+        val validatedDaoSymbols = daoSymbols.filter {
+            it.validate()
+        }.toList()
+        validatedDaoSymbols
+            .forEach {
+                // Visit and process this symbol
+                it.accept(daoVisitor, Unit)
+            }
+
+        // Finally, you return all the unresolved symbols that would need more rounds. In the current example,
+        // this would be an empty list because all the symbols should resolve in the first round.
+        unresolvedSymbols = daoSymbols + databaseSymbols - validatedDatabaseSymbols.toSet() - validatedDaoSymbols.toSet()
         return unresolvedSymbols
     }
 
