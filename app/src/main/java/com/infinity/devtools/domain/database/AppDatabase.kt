@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.infinity.devtools.constants.ConstantsDb.DB_NAME
 import com.infinity.devtools.constants.ConstantsDb.DB_VERSION
-import com.infinity.devtools.data.model.MysqlConn
+import com.infinity.devtools.model.sqlite.MysqlConn
 
 @Database(
     entities = [

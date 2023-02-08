@@ -2,7 +2,7 @@ package com.infinity.devtools.domain.database
 
 import androidx.room.*
 import com.infinity.devtools.constants.ConstantsDb.TABLE_MYSQL_CONN
-import com.infinity.devtools.data.model.MysqlConn
+import com.infinity.devtools.model.sqlite.MysqlConn
 import kotlinx.coroutines.flow.Flow
 
 typealias MysqlConns = List<MysqlConn>

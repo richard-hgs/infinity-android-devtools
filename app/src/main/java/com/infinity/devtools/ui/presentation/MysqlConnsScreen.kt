@@ -38,7 +38,7 @@ import androidx.room.Room
 import com.airbnb.lottie.compose.*
 import com.infinity.devtools.R
 import com.infinity.devtools.constants.ConstantsDb
-import com.infinity.devtools.data.model.MysqlConn
+import com.infinity.devtools.model.sqlite.MysqlConn
 import com.infinity.devtools.di.validators.MysqlValidator
 import com.infinity.devtools.domain.database.AppDatabase
 import com.infinity.devtools.domain.database.MysqlConnDao_Impl

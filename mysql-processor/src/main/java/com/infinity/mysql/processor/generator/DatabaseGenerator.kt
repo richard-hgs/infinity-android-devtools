@@ -35,13 +35,6 @@ class DatabaseGenerator(
         val superType = annotatedClass.asType(emptyList()).toTypeName(TypeParameterResolver.EMPTY)
         val superFunctions = annotatedClass.getDeclaredFunctions()
 
-        for (type in superFunctions) {
-            type.returnType?.let {
-                val returnClass = it.resolve().declaration as? KSClassDeclaration
-                returnClass?.isAnnotationPresent(Dao::class)
-            }
-        }
-
         // Functions to be implemented
         val daoFunctions = superFunctions.filter { ksFunc ->
             ksFunc.returnType?.let { ksReturn ->

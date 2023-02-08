@@ -8,7 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.infinity.devtools.R
 import com.infinity.devtools.constants.Constants.NO_VALUE
-import com.infinity.devtools.data.model.MysqlConn
+import com.infinity.devtools.model.sqlite.MysqlConn
 import com.infinity.devtools.di.validators.MysqlValidator
 import com.infinity.devtools.domain.repository.MysqlConnRepo
 import com.infinity.devtools.domain.resources.ResourcesProvider

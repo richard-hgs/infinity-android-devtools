@@ -13,10 +13,10 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
  * Furthermore, only the files that are created from it are available to KSP for incremental
  * processing and compilations.
  */
-class DatabaseFactoryProcessorProvider : SymbolProcessorProvider {
+class ProcessorProvider : SymbolProcessorProvider {
 
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
-        return DatabaseFactoryProcessor(
+        return Processor(
             logger = environment.logger,
             codeGenerator = environment.codeGenerator
         )

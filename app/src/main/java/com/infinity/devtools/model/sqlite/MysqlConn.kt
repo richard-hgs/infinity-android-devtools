@@ -1,4 +1,4 @@
-package com.infinity.devtools.data.model
+package com.infinity.devtools.model.sqlite
 
 import androidx.room.Entity
 import androidx.room.Index

@@ -1,6 +1,6 @@
 package com.infinity.devtools.domain.repository
 
-import com.infinity.devtools.data.model.MysqlConn
+import com.infinity.devtools.model.sqlite.MysqlConn
 import com.infinity.devtools.domain.database.MysqlConnDao
 
 class MysqlConnRepoImpl(
