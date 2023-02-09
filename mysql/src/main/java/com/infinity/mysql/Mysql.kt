@@ -51,22 +51,17 @@ object Mysql {
      * Creates a MysqlDatabase.Builder for a persistent database. Once a database is built, you
      * should keep a reference to it and re-use it.
      *
-     * @param context The context for the database. This is usually the Application context.
      * @param klass   The abstract class which is annotated with [Database] and extends
      * [MysqlDatabase].
-     * @param name    The name of the database file.
-     * @param T       The type of the database class.
+     * @param connInfo The connection information of the database
+     * @param T        The type of the database class.
      * @return A `MysqlDatabaseBuilder<T>` which you can use to create the database connection.
      */
     @JvmStatic
     fun <T : MysqlDatabase> databaseBuilder(
         klass: Class<T>,
-        name: String,
-        host: String,
-        port: Int,
-        user: String,
-        pass: String
+        connInfo: MysqlConnInfo
     ): MysqlDatabase.Builder<T> {
-        return MysqlDatabase.Builder(klass, name, host, port, user, pass)
+        return MysqlDatabase.Builder(klass, connInfo)
     }
 }

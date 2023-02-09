@@ -26,12 +26,15 @@ class DaoGenerator(
 ) {
 
     fun generate(
-        annotatedClass: KSClassDeclaration
+        annotatedClass: KSClassDeclaration,
+        dbAnnotatedClass: KSClassDeclaration
     ) {
         val packageName = annotatedClass.packageName.asString()
         val implName = "${annotatedClass.simpleName.asString()}_Impl"
         val superType = annotatedClass.asType(emptyList()).toTypeName(TypeParameterResolver.EMPTY)
         val superFunctions = annotatedClass.getDeclaredFunctions()
+
+        val dbType = dbAnnotatedClass.asType(emptyList()).toTypeName(TypeParameterResolver.EMPTY)
 
         // Functions to be implemented
         val queryFunctions = superFunctions.filter { ksFunc ->

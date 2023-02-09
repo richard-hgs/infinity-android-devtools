@@ -5,9 +5,11 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.symbol.KSVisitorVoid
+import com.google.devtools.ksp.symbol.KSNode
 import com.google.devtools.ksp.validate
+import com.google.devtools.ksp.visitor.KSEmptyVisitor
 import com.infinity.mysql.annotation.Dao
+import com.infinity.mysql.annotation.Database
 import com.infinity.mysql.processor.BaseVisitor
 import com.infinity.mysql.processor.generator.DaoGenerator
 
@@ -18,14 +20,21 @@ import com.infinity.mysql.processor.generator.DaoGenerator
 class DaoVisitor(
     private val logger: KSPLogger,
     codeGenerator: CodeGenerator
-) : KSVisitorVoid(), BaseVisitor {
+) : KSEmptyVisitor<KSClassDeclaration, Unit>(), BaseVisitor {
 
     private val generator = DaoGenerator(logger, codeGenerator)
 
-    override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
+    override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: KSClassDeclaration) {
         super.visitClassDeclaration(classDeclaration, data)
 
-        generator.generate(classDeclaration)
+        generator.generate(
+            annotatedClass = classDeclaration,
+            dbAnnotatedClass = data
+        )
+    }
+
+    override fun defaultHandler(node: KSNode, data: KSClassDeclaration) {
+        // Required unused handler
     }
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
@@ -35,13 +44,19 @@ class DaoVisitor(
             .getSymbolsWithAnnotation(Dao::class.qualifiedName!!)
             .toList()
 
+        val dbSymbol = resolver
+            .getSymbolsWithAnnotation(Database::class.qualifiedName!!)
+            .toList()
+            .firstOrNull()
+
         val validatedSymbols = symbols.filter {
+            dbSymbol?.validate()
             it.validate()
         }.toList()
 
         validatedSymbols.forEach {
             // Visit and process this symbol
-            it.accept(this, Unit)
+            it.accept(this, dbSymbol as KSClassDeclaration)
         }
 
         // Return unresolved symbols to be processed in next round
@@ -51,4 +66,6 @@ class DaoVisitor(
 
         return unresolvedSymbols
     }
+
+
 }

@@ -3,6 +3,7 @@ package com.infinity.devtools.domain.odbc
 import android.content.Context
 import com.infinity.devtools.BuildConfig
 import com.infinity.mysql.Mysql
+import com.infinity.mysql.MysqlConnInfo
 import com.infinity.mysql.annotation.Database
 
 /**
@@ -26,11 +27,13 @@ abstract class MysqlDatabase : com.infinity.mysql.MysqlDatabase() {
                 // db_pass=my_db_pass
                 INSTANCE = Mysql.databaseBuilder(
                     MysqlDatabase::class.java,
-                    BuildConfig.DB_NAME,
-                    BuildConfig.DB_HOST,
-                    BuildConfig.DB_PORT,
-                    BuildConfig.DB_USER,
-                    BuildConfig.DB_PASS
+                    MysqlConnInfo(
+                        BuildConfig.DB_NAME,
+                        BuildConfig.DB_HOST,
+                        BuildConfig.DB_PORT,
+                        BuildConfig.DB_USER,
+                        BuildConfig.DB_PASS
+                    )
                 ).build()
             }
 

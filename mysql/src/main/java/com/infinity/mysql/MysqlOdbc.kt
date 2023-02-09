@@ -13,15 +13,10 @@ interface MysqlOdbc {
     /**
      * Connects to a mysql database
      *
-     * @param host Host name of database server
-     * @param port Port of database server
-     * @param user User registered in database
-     * @param pass User password
-     *
      * @throws java.sql.SQLException
      */
     @kotlin.jvm.Throws(SQLException::class)
-    fun connect(host: String, port: Int, user: String, pass: String)
+    fun connect()
 
     /**
      * Disconnect from a mysql database

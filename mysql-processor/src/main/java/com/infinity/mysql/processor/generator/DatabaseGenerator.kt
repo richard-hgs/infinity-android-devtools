@@ -9,11 +9,11 @@ import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.infinity.mysql.annotation.Dao
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.TypeSpec
+import com.infinity.mysql.processor.extensions.toDecapitalize
+import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.jvm.volatile
 import com.squareup.kotlinpoet.ksp.TypeParameterResolver
+import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
 
@@ -35,12 +35,27 @@ class DatabaseGenerator(
         val superType = annotatedClass.asType(emptyList()).toTypeName(TypeParameterResolver.EMPTY)
         val superFunctions = annotatedClass.getDeclaredFunctions()
 
-        // Functions to be implemented
+        // Dao functions to be implemented
         val daoFunctions = superFunctions.filter { ksFunc ->
             ksFunc.returnType?.let { ksReturn ->
-                val returnClass = ksReturn.resolve().declaration as? KSClassDeclaration
-                returnClass?.isAnnotationPresent(Dao::class)
-            } ?: false
+                // Implements only the interface functions that are annotated with [Dao]
+                val returnResolved = ksReturn.resolve()
+                val returnClass = returnResolved.declaration as? KSClassDeclaration
+                val returnClassAnnotated = returnClass?.isAnnotationPresent(Dao::class)
+
+                returnClassAnnotated
+            } == true
+        }
+
+        // Dao variables
+        val daoVariables = daoFunctions.map { ksFunc ->
+            ksFunc.returnType!!.let { ksReturn ->
+                // Implements only the interface functions that are annotated with [Dao]
+                val returnResolved = ksReturn.resolve()
+                val returnClass = returnResolved.declaration as KSClassDeclaration
+
+                returnClass
+            }
         }
 
         // code generation logic
@@ -50,13 +65,38 @@ class DatabaseGenerator(
             addType(
                 TypeSpec.classBuilder(implName)
                     .superclass(superType)
+                    // DAO global variables declaration
+                    .addProperties(daoVariables.asIterable().map { ksClass ->
+                        PropertySpec.builder("_${ksClass.simpleName.asString().toDecapitalize()}", ksClass.toClassName().copy(nullable = true))
+                            .mutable(true)
+                            .volatile()
+                            .addModifiers(KModifier.PRIVATE)
+                            .initializer("null")
+                            .build()
+                    })
+                    // DAO functions generation
                     .addFunctions(daoFunctions.asIterable().map { ksFunc ->
                         val funcName = ksFunc.simpleName.asString()
+                        val returnResolved = ksFunc.returnType!!.resolve()
+                        val returnClass = returnResolved.declaration as KSClassDeclaration
+                        val daoReturnVarName = "_${returnClass.simpleName.asString().toDecapitalize()}"
+
                         FunSpec.builder(funcName)
                             .apply {
                                 addModifiers(KModifier.OVERRIDE)
                             }
-                            .addStatement("return MysqlDao_Impl()")
+                            .addStatement("""
+                                if ($daoReturnVarName != null) {
+                                    return $daoReturnVarName!!
+                                } else {
+                                    synchronized(this) {
+                                        if ($daoReturnVarName == null) {
+                                            $daoReturnVarName = ${returnClass.simpleName.asString()}_Impl()
+                                        }
+                                        return $daoReturnVarName!!
+                                    }
+                                }
+                            """.trimIndent())
                             .returns(ksFunc.returnType!!.resolve().toTypeName(TypeParameterResolver.EMPTY))
                             .build()
                     })

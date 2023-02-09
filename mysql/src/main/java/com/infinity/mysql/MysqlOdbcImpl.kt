@@ -13,6 +13,7 @@ import java.util.*
  */
 class MysqlOdbcImpl : MysqlOdbc {
 
+    var connInfo : MysqlConnInfo? = null
     var conn: Connection? = null
 
     /**
@@ -28,24 +29,21 @@ class MysqlOdbcImpl : MysqlOdbc {
     }
 
     /**
-     * Connects to a mysql database
-     *
-     * @param host Host name of database server
-     * @param port Port of database server
-     * @param user User registered in database
-     * @param pass User password
+     * Connects to mysql database
      *
      * @throws java.sql.SQLException
      */
     @kotlin.jvm.Throws(SQLException::class)
-    override fun connect(host: String, port: Int, user: String, pass: String) {
-        val connectionProps = Properties()
-        connectionProps["user"] = user
-        connectionProps["password"] = pass
+    override fun connect() {
+        if (connInfo != null) {
+            val connectionProps = Properties()
+            connectionProps["user"] = connInfo!!.user
+            connectionProps["password"] = connInfo!!.pass
 
-        conn = DriverManager.getConnection(
-            "jdbc:mysql://$host:$port/", connectionProps
-        )
+            conn = DriverManager.getConnection(
+                "jdbc:mysql://${connInfo!!.host}:${connInfo!!.port}/", connectionProps
+            )
+        }
     }
 
     /**
