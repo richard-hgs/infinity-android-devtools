@@ -50,8 +50,7 @@ class DaoVisitor(
             .firstOrNull()
 
         val validatedSymbols = symbols.filter {
-            dbSymbol?.validate()
-            it.validate()
+            it.validate() && dbSymbol?.validate() ?: false
         }.toList()
 
         validatedSymbols.forEach {

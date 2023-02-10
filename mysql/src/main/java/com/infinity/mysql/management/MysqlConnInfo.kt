@@ -1,4 +1,4 @@
-package com.infinity.mysql
+package com.infinity.mysql.management
 
 /**
  * Created by richard on 09/02/2023 01:00

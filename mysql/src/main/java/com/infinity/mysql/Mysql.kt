@@ -2,6 +2,7 @@ package com.infinity.mysql
 
 import androidx.annotation.RestrictTo
 import com.infinity.mysql.annotation.Database
+import com.infinity.mysql.management.MysqlConnInfo
 
 /**
  * Created by richard on 05/02/2023 19:34
@@ -9,7 +10,6 @@ import com.infinity.mysql.annotation.Database
  * Utility functions for mysql
  */
 object Mysql {
-
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @JvmStatic
     fun <T, C> getGeneratedImplementation(

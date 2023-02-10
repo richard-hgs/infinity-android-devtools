@@ -1,9 +1,8 @@
 package com.infinity.devtools.domain.odbc
 
-import android.content.Context
 import com.infinity.devtools.BuildConfig
 import com.infinity.mysql.Mysql
-import com.infinity.mysql.MysqlConnInfo
+import com.infinity.mysql.management.MysqlConnInfo
 import com.infinity.mysql.annotation.Database
 
 /**
@@ -16,7 +15,7 @@ abstract class MysqlDatabase : com.infinity.mysql.MysqlDatabase() {
     companion object {
         var INSTANCE : MysqlDatabase? = null
 
-        fun getDatabase(context: Context): MysqlDatabase {
+        fun getDatabase(): MysqlDatabase {
             if (INSTANCE == null) {
                 // NOTE: You can change to your test server the information inside project root file: "local.properties"
                 // by creating variables below:

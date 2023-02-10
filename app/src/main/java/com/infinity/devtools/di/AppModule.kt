@@ -4,8 +4,8 @@ import android.content.Context
 import com.infinity.devtools.MyApplication
 import com.infinity.devtools.domain.database.AppDatabase
 import com.infinity.devtools.domain.database.MysqlConnDao
-import com.infinity.mysql.MysqlOdbc
-import com.infinity.mysql.MysqlOdbcImpl
+import com.infinity.devtools.domain.odbc.MysqlDao
+import com.infinity.devtools.domain.odbc.MysqlDatabase
 import com.infinity.devtools.domain.repository.MysqlConnRepo
 import com.infinity.devtools.domain.repository.MysqlConnRepoImpl
 import com.infinity.devtools.domain.resources.ResourcesProvider
@@ -74,6 +74,28 @@ class AppModule {
     )
 
     /**
+     * Provides Mysql ODBC database instance for injection
+     *
+     * @return [MysqlDatabase] instance
+     */
+    @Provides
+    @Singleton
+    fun providesOdbcMysqlDatabase() : MysqlDatabase {
+        return MysqlDatabase.getDatabase()
+    }
+
+    /**
+     * Provides Mysql ODBC database DAO [MysqlDao]
+     *
+     * @return [MysqlDao] instance
+     */
+    @Provides
+    @Singleton
+    fun providesOdbcMysqlDao(
+        mysqlDb: MysqlDatabase
+    ) : MysqlDao = mysqlDb.getMysqlDao()
+
+    /**
      * Provides resource provider instance for injection
      *
      * @param context [MyApplication] Application context
@@ -84,15 +106,4 @@ class AppModule {
     fun provideResourcesProvider(
         context: MyApplication
     ) : ResourcesProvider = ResourcesProviderImpl(context = context)
-
-    /**
-     * Provides [MysqlOdbc] instance for injection
-     *
-     * @return [MysqlOdbc] instance
-     */
-    @Provides
-    @Singleton
-    fun provideMysqlOdbc() : MysqlOdbc {
-        return MysqlOdbcImpl()
-    }
 }

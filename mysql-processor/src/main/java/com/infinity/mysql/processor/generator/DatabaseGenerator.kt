@@ -91,7 +91,7 @@ class DatabaseGenerator(
                                 } else {
                                     synchronized(this) {
                                         if ($daoReturnVarName == null) {
-                                            $daoReturnVarName = ${returnClass.simpleName.asString()}_Impl()
+                                            $daoReturnVarName = ${returnClass.simpleName.asString()}_Impl(this)
                                         }
                                         return $daoReturnVarName!!
                                     }

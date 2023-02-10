@@ -7,10 +7,7 @@ import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.infinity.mysql.annotation.Query
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.TypeParameterResolver
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
@@ -48,7 +45,21 @@ class DaoGenerator(
             addType(
                 TypeSpec.classBuilder(implName)
                     .addSuperinterface(superType)
-                    .primaryConstructor(FunSpec.constructorBuilder().build())
+                    // DAO Primary constructor with Database initialization
+                    .primaryConstructor(
+                        FunSpec.constructorBuilder()
+                            // __db parameter
+                            .addParameter("__db", dbType)
+                            .build()
+                    )
+                    // DAO global database variable
+                    .addProperty(
+                        PropertySpec.builder("__db", dbType)
+                            .addModifiers(KModifier.PRIVATE)
+                            .initializer("__db")
+                            .build()
+                    )
+                    // DAO query functions implementation
                     .addFunctions(queryFunctions.asIterable().map { ksFunc ->
                         val funcName = ksFunc.simpleName.asString()
                         val funcRetResolved = ksFunc.returnType!!.resolve()
