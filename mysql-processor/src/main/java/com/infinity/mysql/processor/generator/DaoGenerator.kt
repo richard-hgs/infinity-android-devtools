@@ -7,6 +7,7 @@ import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.infinity.mysql.annotation.Query
+import com.infinity.mysql.processor.utils.bindQuery
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.TypeParameterResolver
 import com.squareup.kotlinpoet.ksp.toTypeName
@@ -42,6 +43,7 @@ class DaoGenerator(
         val fileSpec = FileSpec.builder(
             packageName = packageName, fileName = implName
         ).apply {
+            addImport("com.infinity.mysql.management", "MysqlQuery")
             addType(
                 TypeSpec.classBuilder(implName)
                     .addSuperinterface(superType)
@@ -64,6 +66,78 @@ class DaoGenerator(
                         val funcName = ksFunc.simpleName.asString()
                         val funcRetResolved = ksFunc.returnType!!.resolve()
                         val funcRetType = funcRetResolved.toTypeName(TypeParameterResolver.EMPTY)
+                        val funcParams = ksFunc.parameters
+                        var funcCode = ""
+                        var funcCodeParams = emptyArray<Any>()
+
+                        if (ksFunc.isAnnotationPresent(Query::class)) {
+                            val funcAnnotArgQuery = ksFunc.annotations.iterator().next().arguments[0].value as String
+                            val bindResult = bindQuery(funcAnnotArgQuery, ksFunc)
+
+                            logger.warn("DAO queryParamMap: ${bindResult.bindMap} - Query: $funcAnnotArgQuery - newQuery: ${bindResult.query}")
+
+                            funcCode = """
+                                 |val _sql = %S
+                                 |val _stmt = MysqlQuery.acquire(_sql, 1)
+                                 |var _argIndex = 1
+                            """.trimIndent()
+
+                            funcCode += bindResult.bindMap.map { funcMapEntry ->
+                                val funcParamValue = funcMapEntry.value
+                                var strBind = "\n"
+                                if (funcMapEntry.key > 0) {
+                                    strBind += "|_argIndex = ${funcMapEntry.key + 1}\n"
+                                }
+
+                                var stmtBindIdentSpace = ""
+
+                                // STMT_NULL_CHECK_START - Add a nullability check to be able to bind the null value in the statement
+                                if (funcParamValue.type.toTypeName().isNullable) {
+                                    stmtBindIdentSpace = "  "
+                                    strBind += "|if (${funcParamValue.name?.asString()} == null) {\n"
+                                    strBind += "|${stmtBindIdentSpace}_stmt.bindNull(_argIndex)\n"
+                                    strBind += "|} else {\n"
+                                }
+
+                                if (funcParamValue.type.toTypeName() == Long::class.asTypeName() ||
+                                    funcParamValue.type.toTypeName() == Int::class.asTypeName() ||
+                                    funcParamValue.type.toTypeName() == Int::class.asTypeName().copy(true)
+                                ) {
+
+                                    // The bind long statement
+                                    strBind += "|${stmtBindIdentSpace}_stmt.bindLong(_argIndex, ${funcParamValue.name?.asString()}"
+
+                                    // Add the proper cast if function param needs to be cast to the appropriate bind param
+                                    if (
+                                        funcParamValue.type.toTypeName() == Int::class.asTypeName() ||
+                                        funcParamValue.type.toTypeName() == Int::class.asTypeName().copy(true)
+                                    ) {
+                                        strBind += ".toLong()"
+                                    }
+                                    strBind += ")"
+                                } else if (funcParamValue.type.toTypeName() == String::class.asTypeName()) {
+                                    strBind += "|${stmtBindIdentSpace}_stmt.bindString(_argIndex, ${funcParamValue.name?.asString()})"
+                                } else if (
+                                    funcParamValue.type.toTypeName() == Double::class.asTypeName() ||
+                                    funcParamValue.type.toTypeName() == Float::class.asTypeName()
+                                ) {
+                                    strBind += "|${stmtBindIdentSpace}_stmt.bindDouble(_argIndex, ${funcParamValue.name?.asString()})"
+                                }
+
+                                // STMT_NULL_CHECK_END - Add a nullability check to be able to bind the null value in the statement
+                                if (funcParamValue.type.toTypeName().isNullable) {
+                                    // End of nullable bindParam check
+                                    strBind += "\n|}"
+                                }
+
+                                strBind
+                            }.joinToString("")
+
+                            funcCodeParams = arrayOf(
+                                bindResult.query
+                            )
+                        }
+
                         // val funcRetTypeParam = ksFunc.returnType!!.resolve().arguments.firstOrNull()?.toTypeName(TypeParameterResolver.EMPTY)
                         // val funcRetClassName = (ksFunc.returnType!!.resolve().declaration as KSClassDeclaration).simpleName.asString()
                         // val funcRetTypeParamClassName = ksFunc.returnType!!.resolve().arguments.firstOrNull()?.type?.toString()
@@ -71,10 +145,20 @@ class DaoGenerator(
                         // logger.warn("funcRetType: ${funcRetClassName}<${funcRetTypeParamClassName}>")
 
                         FunSpec.builder(funcName)
-                            .apply {
-                                addModifiers(KModifier.OVERRIDE)
-                            }
-                            .addStatement("return emptyList()")
+                            .addModifiers(KModifier.OVERRIDE)
+                            .addParameters(funcParams.asIterable().map { ksParam ->
+                                val paramName = ksParam.name!!.asString()
+                                val paramType = ksParam.type.toTypeName()
+                                ParameterSpec.builder(paramName, paramType)
+                                    .build()
+                            })
+                            .addCode(
+                                """
+                                    ${funcCode}
+                                    |return emptyList()
+                                """.trimMargin(),
+                                *funcCodeParams
+                            )
                             .returns(funcRetType)
                             .build()
                     })

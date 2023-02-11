@@ -3,8 +3,11 @@ package com.infinity.mysql
 import android.os.Looper
 import androidx.annotation.RestrictTo
 import com.infinity.mysql.management.MysqlConnInfo
+import com.infinity.mysql.management.MysqlQuery
 import java.sql.*
 import java.util.*
+import java.util.concurrent.locks.Lock
+import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**
  * Created by richard on 05/02/2023 19:23
@@ -42,6 +45,11 @@ open class MysqlDatabase {
      * Saves the status of current connection transaction status
      */
     private var transactionInProgress = false
+
+    /**
+     * Locker for read and write of database
+     */
+    private val readWriteLock = ReentrantReadWriteLock()
 
     /**
      * Constructor that loads jdbc driver and creates a new instance.
@@ -82,6 +90,20 @@ open class MysqlDatabase {
         get() = Looper.getMainLooper().thread === Thread.currentThread()
 
     /**
+     * Uses this lock to prevent the database from closing while it is
+     * querying database updates.
+     *
+     * The returned lock is reentrant and will allow multiple threads to acquire the lock
+     * simultaneously until close is invoked in which the lock becomes exclusive as
+     * a way to let the InvalidationTracker finish its work before closing the database.
+     *
+     * @return The lock for close.
+     */
+    internal fun getCloseLock(): Lock {
+        return readWriteLock.readLock()
+    }
+
+    /**
      * Asserts that we are not on a suspending transaction.
      *
      * @hide
@@ -110,7 +132,6 @@ open class MysqlDatabase {
         }
     }
 
-
     /**
      * Connects to mysql database
      *
@@ -137,9 +158,19 @@ open class MysqlDatabase {
     @kotlin.jvm.Throws(SQLException::class)
     private fun disconnect(validTimeout: Int) {
         conn?.let {
+            // Check if connection is valid
             if (it.isValid(validTimeout)) {
-                it.close()
-                conn = null
+                // Acquire close lock
+                val closeLock: Lock = readWriteLock.writeLock()
+                closeLock.lock()
+
+                try {
+                    it.close()
+                    conn = null
+                } finally {
+                    // Release close lock
+                    closeLock.unlock()
+                }
             }
         }
     }
@@ -183,6 +214,71 @@ open class MysqlDatabase {
         return getConn().prepareStatement(sql)
     }
 
+    private fun beginTransaction() {
+        assertNotMainThread()
+        internalBeginTransaction()
+    }
+
+    private fun internalBeginTransaction() {
+        assertNotMainThread()
+        val conn = getConn()
+        conn.autoCommit = false
+        transactionInProgress = true
+    }
+
+    private fun endTransaction() {
+        internalEndTransaction()
+    }
+
+    private fun internalEndTransaction() {
+        try {
+            val conn = getConn()
+            if (!conn.autoCommit) {
+                conn.autoCommit = true
+            }
+        } finally {
+            transactionInProgress = false
+        }
+    }
+
+    private fun setTransactionSuccessful() {
+        try {
+            val conn = getConn()
+            if (!conn.autoCommit) {
+                conn.commit()
+            }
+        } finally {
+            transactionInProgress = false
+        }
+    }
+
+    /**
+     * Executes the specified [Runnable] in a database transaction. The transaction will be
+     * marked as successful unless an exception is thrown in the [Runnable].
+     *
+     * Room will only perform at most one transaction at a time.
+     *
+     * @param body The piece of code to execute.
+     */
+    @Suppress("DEPRECATION")
+    open fun runInTransaction(body: Runnable) {
+        beginTransaction()
+        try {
+            body.run()
+            setTransactionSuccessful()
+        } finally {
+            endTransaction()
+        }
+    }
+
+    open fun query(query: MysqlQuery): ResultSet {
+        assertNotMainThread()
+        assertNotSuspendingTransaction()
+        val conn = getConn()
+        val prepStmt = conn.prepareStatement(query.sql)
+        return prepStmt.executeQuery()
+    }
+
 //    /**
 //     * Executes a sql in current connection
 //     *
@@ -200,6 +296,8 @@ open class MysqlDatabase {
 //        if (isConnected()) {
 //            return conn?.let { mConn ->
 //                val stmt : PreparedStatement = mConn.prepareStatement(query)
+//
+//                stmt.setString(0, 1)
 //
 //                bindArgs.forEachIndexed { index, value ->
 //                    when(value) {

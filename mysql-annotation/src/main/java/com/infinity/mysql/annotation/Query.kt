@@ -6,6 +6,4 @@ package com.infinity.mysql.annotation
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
-annotation class Query(
-    val query: String
-)
+annotation class Query(val query: String)
