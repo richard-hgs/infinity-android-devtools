@@ -7,6 +7,7 @@ import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.infinity.mysql.annotation.Query
+import com.infinity.mysql.processor.extensions.getDefaultValueExpression
 import com.infinity.mysql.processor.utils.bindQuery
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.TypeParameterResolver
@@ -44,6 +45,8 @@ class DaoGenerator(
             packageName = packageName, fileName = implName
         ).apply {
             addImport("com.infinity.mysql.management", "MysqlQuery")
+            addImport("com.infinity.mysql.management", "DBUtil")
+            addImport("android.util", "Log") // Debug Only
             addType(
                 TypeSpec.classBuilder(implName)
                     .addSuperinterface(superType)
@@ -133,6 +136,19 @@ class DaoGenerator(
                                 strBind
                             }.joinToString("")
 
+                            // Check if some transaction is in progress, usually happens when concurrent coroutines are accessing database at same time
+                            funcCode += "\n|__db.assertNotSuspendingTransaction()"
+
+                            // Execute the [MysqlStmt] and get the [ResultSet]
+                            funcCode += "\n|val resultSet = DBUtil.query(__db, _stmt)"
+
+                            funcCode += "\n"
+                            funcCode += """
+                                |do {
+                                |  Log.d("MysqlDao", resultSet.getString(resultSet.findColumn("TABLE_NAME")))
+                                |} while(resultSet.next())
+                            """.trimIndent()
+
                             funcCodeParams = arrayOf(
                                 bindResult.query
                             )
@@ -149,6 +165,8 @@ class DaoGenerator(
                             .addParameters(funcParams.asIterable().map { ksParam ->
                                 val paramName = ksParam.name!!.asString()
                                 val paramType = ksParam.type.toTypeName()
+                                val paramHasDef = ksParam.getDefaultValueExpression(logger)
+
                                 ParameterSpec.builder(paramName, paramType)
                                     .build()
                             })

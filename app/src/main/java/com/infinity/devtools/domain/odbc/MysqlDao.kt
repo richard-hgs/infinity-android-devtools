@@ -11,6 +11,6 @@ import com.infinity.mysql.annotation.Query
  */
 @Dao
 interface MysqlDao {
-    @Query("SELECT * FROM information_schema.tables WHERE table_schema = :schema AND code = :code AND table_schema = :schema")
-    fun getTables(code: Int?, schema : String = BuildConfig.DB_NAME) : List<TableInfo>
+    @Query("SELECT * FROM information_schema.tables WHERE table_schema = :schema")
+    fun getTables(schema : String = BuildConfig.DB_NAME) : List<TableInfo>
 }

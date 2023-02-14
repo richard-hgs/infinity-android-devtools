@@ -19,6 +19,7 @@ import com.google.accompanist.navigation.animation.composable
 import com.infinity.devtools.constants.ConstantsDb.MYSQL_CONN_ID
 import com.infinity.devtools.ui.presentation.MysqlConnsScreen
 import com.infinity.devtools.ui.presentation.NewMysqlConnScreen
+import com.infinity.devtools.ui.presentation.ServerConnHomeScreen
 import com.infinity.devtools.ui.presentation.SplashScreen
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -89,7 +90,7 @@ fun NavGraph(
                     navController.navigate(Screen.NewMysqlConnScreen.route)
                 },
                 navigateToMysqlDbHomeScreen = {
-
+                    navController.navigate(Screen.ServerConnHomeScreen.route)
                 }
             )
         }
@@ -142,6 +143,28 @@ fun NavGraph(
                     navController.popBackStack()
                 },
                 connId = connId
+            )
+        }
+
+        composable(
+            route = Screen.ServerConnHomeScreen.route,
+            enterTransition = {
+                slideInHorizontally(initialOffsetX = { offset }, animationSpec = tweenSpec)
+            },
+            exitTransition = {
+                slideOutHorizontally(targetOffsetX = { -offset }, animationSpec = tweenSpec)
+            },
+            popEnterTransition = {
+                slideInHorizontally(initialOffsetX = { -offset }, animationSpec = tweenSpec)
+            },
+            popExitTransition = {
+                slideOutHorizontally(targetOffsetX = { offset }, animationSpec = tweenSpec)
+            }
+        ) {
+            ServerConnHomeScreen(
+                navigateBack = {
+                    navController.popBackStack()
+                }
             )
         }
     }

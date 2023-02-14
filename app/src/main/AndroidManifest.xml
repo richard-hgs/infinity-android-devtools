@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="false"
@@ -8,7 +11,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.DevTools"
-        android:name=".MyApplication">
+        android:name=".MyApplication"
+        android:enableOnBackInvokedCallback="true"
+        tools:targetApi="tiramisu">
+
         <activity
             android:name=".ui.presentation.MainActivity"
             android:exported="true"

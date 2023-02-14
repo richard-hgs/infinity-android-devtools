@@ -62,7 +62,7 @@ open class MysqlDatabase {
     @Suppress("ConvertSecondaryConstructorToPrimary")
     @kotlin.jvm.Throws(ClassNotFoundException::class, IllegalAccessException::class, InstantiationException::class)
     constructor() {
-        Class.forName("com.mysql.jdbc.Driver").newInstance()
+         Class.forName("com.mysql.cj.jdbc.Driver").newInstance()
     }
 
     /**
