@@ -276,6 +276,7 @@ open class MysqlDatabase {
         assertNotSuspendingTransaction()
         val conn = getConn()
         val prepStmt = conn.prepareStatement(query.sql)
+        query.bindTo(prepStmt)
         return prepStmt.executeQuery()
     }
 

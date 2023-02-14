@@ -140,13 +140,14 @@ class DaoGenerator(
                             funcCode += "\n|__db.assertNotSuspendingTransaction()"
 
                             // Execute the [MysqlStmt] and get the [ResultSet]
-                            funcCode += "\n|val resultSet = DBUtil.query(__db, _stmt)"
+                            funcCode += "\n|val _resultSet = DBUtil.query(__db, _stmt)"
 
                             funcCode += "\n"
                             funcCode += """
-                                |do {
-                                |  Log.d("MysqlDao", resultSet.getString(resultSet.findColumn("TABLE_NAME")))
-                                |} while(resultSet.next())
+                                |while(_resultSet.next()) {
+                                |  Log.d("MysqlDao", _resultSet.getString(_resultSet.findColumn("TABLE_NAME")))
+                                |}
+                                |_resultSet.close()
                             """.trimIndent()
 
                             funcCodeParams = arrayOf(
