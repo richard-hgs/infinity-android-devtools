@@ -1,16 +1,16 @@
 package com.infinity.mysql.processor.generator
 
-import com.google.devtools.ksp.KspExperimental
-import com.google.devtools.ksp.getDeclaredFunctions
-import com.google.devtools.ksp.isAnnotationPresent
+import com.google.devtools.ksp.*
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.infinity.mysql.annotation.ColumnInfo
 import com.infinity.mysql.annotation.Query
 import com.infinity.mysql.processor.extensions.getDefaultValueExpression
 import com.infinity.mysql.processor.utils.bindQuery
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.TypeParameterResolver
+import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
 
@@ -46,6 +46,7 @@ class DaoGenerator(
         ).apply {
             addImport("com.infinity.mysql.management", "MysqlQuery")
             addImport("com.infinity.mysql.management", "DBUtil")
+            addImport("com.infinity.mysql.management", "ResultSetUtil")
             addImport("android.util", "Log") // Debug Only
             addType(
                 TypeSpec.classBuilder(implName)
@@ -68,10 +69,14 @@ class DaoGenerator(
                     .addFunctions(queryFunctions.asIterable().map { ksFunc ->
                         val funcName = ksFunc.simpleName.asString()
                         val funcRetResolved = ksFunc.returnType!!.resolve()
-                        val funcRetType = funcRetResolved.toTypeName(TypeParameterResolver.EMPTY)
+                        val funcRetType = funcRetResolved.toTypeName()
+                        val funcRetClass = funcRetResolved.declaration as KSClassDeclaration
+                        val funcRetTypeParam = funcRetResolved.arguments.firstOrNull()?.type
                         val funcParams = ksFunc.parameters
                         var funcCode = ""
                         var funcCodeParams = emptyArray<Any>()
+
+                        logger.warn("funcRetType is a ${funcRetClass.simpleName.asString()}<${funcRetTypeParam.toString()}>")
 
                         if (ksFunc.isAnnotationPresent(Query::class)) {
                             val funcAnnotArgQuery = ksFunc.annotations.iterator().next().arguments[0].value as String
@@ -142,6 +147,29 @@ class DaoGenerator(
                             // Execute the [MysqlStmt] and get the [ResultSet]
                             funcCode += "\n|val _resultSet = DBUtil.query(__db, _stmt)"
 
+                            // Get the map [String(colName)] => [ColumnInfo]
+                            funcCode += "\n|val _colInfoMap = ResultSetUtil.mapResultColumns(_resultSet)"
+
+                            // Get the indexes of the bind columns of the query
+
+                            if (funcRetClass.toClassName() == List::class.asClassName()) {
+                                if (funcRetTypeParam == null) {
+                                    throw Exception("List<${funcRetTypeParam.toString()}> typeParamClass is null.");
+                                }
+                                val funcRetTypeParamClass = (funcRetTypeParam.resolve().declaration as KSClassDeclaration)
+                                val funcRetListClassProps = funcRetTypeParamClass.getDeclaredProperties().iterator()
+                                while(funcRetListClassProps.hasNext()) {
+                                    val propAt = funcRetListClassProps.next()
+                                    val propAtColName = propAt.simpleName
+                                    val propAtAnnotColInfo = propAt.getAnnotationsByType(ColumnInfo::class).firstOrNull()
+                                    if (propAtAnnotColInfo != null && propAtAnnotColInfo.name != ColumnInfo.INHERIT_FIELD_NAME) {
+
+                                    }
+                                    logger.warn("funcRetProp: ${propAt.simpleName.asString()}")
+                                }
+                            }
+
+                            // Read the result
                             funcCode += "\n"
                             funcCode += """
                                 |while(_resultSet.next()) {
@@ -154,12 +182,6 @@ class DaoGenerator(
                                 bindResult.query
                             )
                         }
-
-                        // val funcRetTypeParam = ksFunc.returnType!!.resolve().arguments.firstOrNull()?.toTypeName(TypeParameterResolver.EMPTY)
-                        // val funcRetClassName = (ksFunc.returnType!!.resolve().declaration as KSClassDeclaration).simpleName.asString()
-                        // val funcRetTypeParamClassName = ksFunc.returnType!!.resolve().arguments.firstOrNull()?.type?.toString()
-
-                        // logger.warn("funcRetType: ${funcRetClassName}<${funcRetTypeParamClassName}>")
 
                         FunSpec.builder(funcName)
                             .addModifiers(KModifier.OVERRIDE)

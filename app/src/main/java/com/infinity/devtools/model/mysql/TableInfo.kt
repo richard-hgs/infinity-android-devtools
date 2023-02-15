@@ -1,5 +1,6 @@
 package com.infinity.devtools.model.mysql
 
+import com.infinity.mysql.annotation.ColumnInfo
 import com.infinity.mysql.annotation.Entity
 
 /**
@@ -10,7 +11,6 @@ import com.infinity.mysql.annotation.Entity
     tableName = "information_schema.tables"
 )
 class TableInfo(
-    private val tableName: String
-) {
-
-}
+    @ColumnInfo(name = "TABLE_NAME")
+    val tableName: String
+)

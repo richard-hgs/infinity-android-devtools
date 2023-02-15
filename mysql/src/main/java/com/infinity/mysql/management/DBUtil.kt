@@ -26,5 +26,4 @@ object DBUtil {
     ): ResultSet {
         return db.query(mysqlQuery)
     }
-
 }
