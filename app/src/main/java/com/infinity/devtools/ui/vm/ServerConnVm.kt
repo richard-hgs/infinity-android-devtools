@@ -1,5 +1,6 @@
 package com.infinity.devtools.ui.vm
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.infinity.devtools.domain.odbc.MysqlDao
@@ -24,6 +25,9 @@ class ServerConnVm @Inject constructor(
     }
 
     fun getTables() = viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
-        mysqlDao.getTables()
+        val tableInfoList = mysqlDao.getTables()
+        tableInfoList.forEach {
+            Log.d("ServerConnVm", "tableInfo: ${it.tableName}")
+        }
     }
 }

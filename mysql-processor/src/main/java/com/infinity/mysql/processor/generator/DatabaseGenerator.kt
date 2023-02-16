@@ -9,7 +9,7 @@ import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.infinity.mysql.annotation.Dao
-import com.infinity.mysql.processor.extensions.toDecapitalize
+import com.infinity.mysql.processor.extensions._decapitalize
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.jvm.volatile
 import com.squareup.kotlinpoet.ksp.TypeParameterResolver
@@ -67,7 +67,7 @@ class DatabaseGenerator(
                     .superclass(superType)
                     // DAO global variables declaration
                     .addProperties(daoVariables.asIterable().map { ksClass ->
-                        PropertySpec.builder("_${ksClass.simpleName.asString().toDecapitalize()}", ksClass.toClassName().copy(nullable = true))
+                        PropertySpec.builder("_${ksClass.simpleName.asString()._decapitalize()}", ksClass.toClassName().copy(nullable = true))
                             .mutable(true)
                             .volatile()
                             .addModifiers(KModifier.PRIVATE)
@@ -79,7 +79,7 @@ class DatabaseGenerator(
                         val funcName = ksFunc.simpleName.asString()
                         val returnResolved = ksFunc.returnType!!.resolve()
                         val returnClass = returnResolved.declaration as KSClassDeclaration
-                        val daoReturnVarName = "_${returnClass.simpleName.asString().toDecapitalize()}"
+                        val daoReturnVarName = "_${returnClass.simpleName.asString()._decapitalize()}"
 
                         FunSpec.builder(funcName)
                             .apply {

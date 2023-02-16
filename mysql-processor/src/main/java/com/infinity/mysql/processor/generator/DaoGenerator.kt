@@ -6,8 +6,8 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.infinity.mysql.annotation.ColumnInfo
 import com.infinity.mysql.annotation.Query
-import com.infinity.mysql.processor.extensions.getDefaultValueExpression
-import com.infinity.mysql.processor.utils.bindQuery
+import com.infinity.mysql.processor.extensions._camelCase
+import com.infinity.mysql.processor.utils.BindUtils
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.TypeParameterResolver
 import com.squareup.kotlinpoet.ksp.toClassName
@@ -80,7 +80,7 @@ class DaoGenerator(
 
                         if (ksFunc.isAnnotationPresent(Query::class)) {
                             val funcAnnotArgQuery = ksFunc.annotations.iterator().next().arguments[0].value as String
-                            val bindResult = bindQuery(funcAnnotArgQuery, ksFunc)
+                            val bindResult = BindUtils.bindQuery(funcAnnotArgQuery, ksFunc)
 
                             logger.warn("DAO queryParamMap: ${bindResult.bindMap} - Query: $funcAnnotArgQuery - newQuery: ${bindResult.query}")
 
@@ -89,6 +89,9 @@ class DaoGenerator(
                                  |val _stmt = MysqlQuery.acquire(_sql, 1)
                                  |var _argIndex = 1
                             """.trimIndent()
+
+                            // Append the query param string to be formatted
+                            funcCodeParams += bindResult.query
 
                             funcCode += bindResult.bindMap.map { funcMapEntry ->
                                 val funcParamValue = funcMapEntry.value
@@ -147,40 +150,90 @@ class DaoGenerator(
                             // Execute the [MysqlStmt] and get the [ResultSet]
                             funcCode += "\n|val _resultSet = DBUtil.query(__db, _stmt)"
 
+                            // RESULT_SET(START) of the - try finally - Create a try finally to be able to close resultSet even if an error occurs
+                            funcCode += "\n|try {"
+
                             // Get the map [String(colName)] => [ColumnInfo]
-                            funcCode += "\n|val _colInfoMap = ResultSetUtil.mapResultColumns(_resultSet)"
+                            funcCode += "\n|  val _colInfoMap = ResultSetUtil.mapResultColumns(_resultSet)"
 
                             // Get the indexes of the bind columns of the query
 
                             if (funcRetClass.toClassName() == List::class.asClassName()) {
+                                var strListItemInstance = ""
+                                var strCursorIndexes = ""
+                                var strReadCursorRows = "\n|  while(_resultSet.next()) {"
                                 if (funcRetTypeParam == null) {
-                                    throw Exception("List<${funcRetTypeParam.toString()}> typeParamClass is null.");
+                                    // If list Type parameter not resolved notify user through an exception.
+                                    throw Exception("List<T> typeParamClass is null.")
                                 }
                                 val funcRetTypeParamClass = (funcRetTypeParam.resolve().declaration as KSClassDeclaration)
                                 val funcRetListClassProps = funcRetTypeParamClass.getDeclaredProperties().iterator()
+
+                                strReadCursorRows += "\n|    val _item : ${funcRetTypeParamClass.simpleName.asString()}"
+                                strListItemInstance += "\n|    _item = ${funcRetTypeParamClass.simpleName.asString()}("
+
                                 while(funcRetListClassProps.hasNext()) {
                                     val propAt = funcRetListClassProps.next()
-                                    val propAtColName = propAt.simpleName
+                                    var propAtColName = propAt.simpleName.asString()
                                     val propAtAnnotColInfo = propAt.getAnnotationsByType(ColumnInfo::class).firstOrNull()
+                                    val propAtAttrTypeStr : String
+                                    val propAtAttrTypeGetStr : String
                                     if (propAtAnnotColInfo != null && propAtAnnotColInfo.name != ColumnInfo.INHERIT_FIELD_NAME) {
-
+                                        propAtColName = propAtAnnotColInfo.name
                                     }
-                                    logger.warn("funcRetProp: ${propAt.simpleName.asString()}")
+
+                                    if (propAt.type.toTypeName() == String::class.asTypeName() || propAt.type.toTypeName() == String::class.asTypeName().copy(true)) {
+                                        val optional = propAt.type.toTypeName() == String::class.asTypeName().copy(true)
+                                        propAtAttrTypeStr = "String" + if (optional) "?" else ""
+                                        propAtAttrTypeGetStr = "String"
+                                    } else if (propAt.type.toTypeName() == Int::class.asTypeName() || propAt.type.toTypeName() == Int::class.asTypeName().copy(true)) {
+                                        val optional = propAt.type.toTypeName() == Int::class.asTypeName().copy(true)
+                                        propAtAttrTypeStr = "Int" + if (optional) "?" else ""
+                                        propAtAttrTypeGetStr = "Int"
+                                    } else if (propAt.type.toTypeName() == Long::class.asTypeName() || propAt.type.toTypeName() == Long::class.asTypeName().copy(true)) {
+                                        val optional = propAt.type.toTypeName() == Long::class.asTypeName().copy(true)
+                                        propAtAttrTypeStr = "Long" + if (optional) "?" else ""
+                                        propAtAttrTypeGetStr = "Long"
+                                    } else if (propAt.type.toTypeName() == Float::class.asTypeName() || propAt.type.toTypeName() == Float::class.asTypeName().copy(true)) {
+                                        val optional = propAt.type.toTypeName() == Float::class.asTypeName().copy(true)
+                                        propAtAttrTypeStr = "Float" + if (optional) "?" else ""
+                                        propAtAttrTypeGetStr = "Float"
+                                    } else if (propAt.type.toTypeName() == Double::class.asTypeName() || propAt.type.toTypeName() == Double::class.asTypeName().copy(true)) {
+                                        val optional = propAt.type.toTypeName() == Double::class.asTypeName().copy(true)
+                                        propAtAttrTypeStr = "Double" + if (optional) "?" else ""
+                                        propAtAttrTypeGetStr = "Double"
+                                    } else {
+                                        propAtAttrTypeStr = "Any"
+                                        propAtAttrTypeGetStr = "Object"
+                                    }
+
+                                    strCursorIndexes += "\n"
+                                    strCursorIndexes += """|  val _cursorIndexOf${propAtColName._camelCase()} = ResultSetUtil.getColumnIndexOrThrow(_colInfoMap, %S)""".trimIndent()
+
+                                    // Append the column name to string format params
+                                    funcCodeParams += propAtColName
+
+                                    strReadCursorRows += "\n"
+                                    strReadCursorRows += """
+                                        |    val _tmp${propAtColName._camelCase()} : $propAtAttrTypeStr = _resultSet.get$propAtAttrTypeGetStr(_cursorIndexOf${propAtColName._camelCase()})
+                                    """.trimIndent()
+
+                                    strListItemInstance += "_tmp${propAtColName._camelCase()}" + if (funcRetListClassProps.hasNext()) ","  else ""
                                 }
+                                strListItemInstance += ")"
+                                strReadCursorRows += strListItemInstance
+                                strReadCursorRows += "\n|    _result += _item"
+                                strReadCursorRows += "\n|  }"
+
+                                funcCode += strCursorIndexes
+                                funcCode += "\n|  val _result = ArrayList<${funcRetTypeParamClass.simpleName.asString()}>(_resultSet.fetchSize)"
+                                funcCode += strReadCursorRows
+                                funcCode += "\n|  return _result"
                             }
 
-                            // Read the result
-                            funcCode += "\n"
-                            funcCode += """
-                                |while(_resultSet.next()) {
-                                |  Log.d("MysqlDao", _resultSet.getString(_resultSet.findColumn("TABLE_NAME")))
-                                |}
-                                |_resultSet.close()
-                            """.trimIndent()
-
-                            funcCodeParams = arrayOf(
-                                bindResult.query
-                            )
+                            funcCode += "\n|} finally {" // RESULT_SET(END) of the - try finally
+                            funcCode += "\n|  _resultSet.close()"
+                            funcCode += "\n|}"
                         }
 
                         FunSpec.builder(funcName)
@@ -188,15 +241,14 @@ class DaoGenerator(
                             .addParameters(funcParams.asIterable().map { ksParam ->
                                 val paramName = ksParam.name!!.asString()
                                 val paramType = ksParam.type.toTypeName()
-                                val paramHasDef = ksParam.getDefaultValueExpression(logger)
+                                // val paramHasDef = ksParam.getDefaultValueExpression(logger)
 
                                 ParameterSpec.builder(paramName, paramType)
                                     .build()
                             })
                             .addCode(
                                 """
-                                    ${funcCode}
-                                    |return emptyList()
+                                    $funcCode
                                 """.trimMargin(),
                                 *funcCodeParams
                             )
