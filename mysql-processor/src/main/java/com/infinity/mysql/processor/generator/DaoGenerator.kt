@@ -4,15 +4,21 @@ import com.google.devtools.ksp.*
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeReference
 import com.infinity.mysql.annotation.ColumnInfo
 import com.infinity.mysql.annotation.Query
 import com.infinity.mysql.processor.extensions._camelCase
+import com.infinity.mysql.processor.model.MysqlTypeGen
+import com.infinity.mysql.processor.model.PartialGenResult
 import com.infinity.mysql.processor.utils.BindUtils
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.TypeParameterResolver
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
+import java.sql.ResultSet
+import java.util.stream.IntStream.range
 
 /**
  * Created by richard on 06/02/2023 22:59
@@ -159,76 +165,15 @@ class DaoGenerator(
                             // Get the indexes of the bind columns of the query
 
                             if (funcRetClass.toClassName() == List::class.asClassName()) {
-                                var strListItemInstance = ""
-                                var strCursorIndexes = ""
-                                var strReadCursorRows = "\n|  while(_resultSet.next()) {"
-                                if (funcRetTypeParam == null) {
-                                    // If list Type parameter not resolved notify user through an exception.
-                                    throw Exception("List<T> typeParamClass is null.")
-                                }
-                                val funcRetTypeParamClass = (funcRetTypeParam.resolve().declaration as KSClassDeclaration)
-                                val funcRetListClassProps = funcRetTypeParamClass.getDeclaredProperties().iterator()
-
-                                strReadCursorRows += "\n|    val _item : ${funcRetTypeParamClass.simpleName.asString()}"
-                                strListItemInstance += "\n|    _item = ${funcRetTypeParamClass.simpleName.asString()}("
-
-                                while(funcRetListClassProps.hasNext()) {
-                                    val propAt = funcRetListClassProps.next()
-                                    var propAtColName = propAt.simpleName.asString()
-                                    val propAtAnnotColInfo = propAt.getAnnotationsByType(ColumnInfo::class).firstOrNull()
-                                    val propAtAttrTypeStr : String
-                                    val propAtAttrTypeGetStr : String
-                                    if (propAtAnnotColInfo != null && propAtAnnotColInfo.name != ColumnInfo.INHERIT_FIELD_NAME) {
-                                        propAtColName = propAtAnnotColInfo.name
-                                    }
-
-                                    if (propAt.type.toTypeName() == String::class.asTypeName() || propAt.type.toTypeName() == String::class.asTypeName().copy(true)) {
-                                        val optional = propAt.type.toTypeName() == String::class.asTypeName().copy(true)
-                                        propAtAttrTypeStr = "String" + if (optional) "?" else ""
-                                        propAtAttrTypeGetStr = "String"
-                                    } else if (propAt.type.toTypeName() == Int::class.asTypeName() || propAt.type.toTypeName() == Int::class.asTypeName().copy(true)) {
-                                        val optional = propAt.type.toTypeName() == Int::class.asTypeName().copy(true)
-                                        propAtAttrTypeStr = "Int" + if (optional) "?" else ""
-                                        propAtAttrTypeGetStr = "Int"
-                                    } else if (propAt.type.toTypeName() == Long::class.asTypeName() || propAt.type.toTypeName() == Long::class.asTypeName().copy(true)) {
-                                        val optional = propAt.type.toTypeName() == Long::class.asTypeName().copy(true)
-                                        propAtAttrTypeStr = "Long" + if (optional) "?" else ""
-                                        propAtAttrTypeGetStr = "Long"
-                                    } else if (propAt.type.toTypeName() == Float::class.asTypeName() || propAt.type.toTypeName() == Float::class.asTypeName().copy(true)) {
-                                        val optional = propAt.type.toTypeName() == Float::class.asTypeName().copy(true)
-                                        propAtAttrTypeStr = "Float" + if (optional) "?" else ""
-                                        propAtAttrTypeGetStr = "Float"
-                                    } else if (propAt.type.toTypeName() == Double::class.asTypeName() || propAt.type.toTypeName() == Double::class.asTypeName().copy(true)) {
-                                        val optional = propAt.type.toTypeName() == Double::class.asTypeName().copy(true)
-                                        propAtAttrTypeStr = "Double" + if (optional) "?" else ""
-                                        propAtAttrTypeGetStr = "Double"
-                                    } else {
-                                        propAtAttrTypeStr = "Any"
-                                        propAtAttrTypeGetStr = "Object"
-                                    }
-
-                                    strCursorIndexes += "\n"
-                                    strCursorIndexes += """|  val _cursorIndexOf${propAtColName._camelCase()} = ResultSetUtil.getColumnIndexOrThrow(_colInfoMap, %S)""".trimIndent()
-
-                                    // Append the column name to string format params
-                                    funcCodeParams += propAtColName
-
-                                    strReadCursorRows += "\n"
-                                    strReadCursorRows += """
-                                        |    val _tmp${propAtColName._camelCase()} : $propAtAttrTypeStr = _resultSet.get$propAtAttrTypeGetStr(_cursorIndexOf${propAtColName._camelCase()})
-                                    """.trimIndent()
-
-                                    strListItemInstance += "_tmp${propAtColName._camelCase()}" + if (funcRetListClassProps.hasNext()) ","  else ""
-                                }
-                                strListItemInstance += ")"
-                                strReadCursorRows += strListItemInstance
-                                strReadCursorRows += "\n|    _result += _item"
-                                strReadCursorRows += "\n|  }"
-
-                                funcCode += strCursorIndexes
-                                funcCode += "\n|  val _result = ArrayList<${funcRetTypeParamClass.simpleName.asString()}>(_resultSet.fetchSize)"
-                                funcCode += strReadCursorRows
-                                funcCode += "\n|  return _result"
+                                // Return type is a list generate code for iterating ResultSet and read the column values to the val _result List<T>
+                                val genResult = generateResultSetReadForListReturnType(funcRetTypeParam, 1)
+                                funcCode += genResult.genCode
+                                funcCodeParams = funcCodeParams.plus(elements = genResult.genCodeParams)
+                            } else if (funcRetClass.toClassName() == Double::class.asClassName()) {
+                                // Return type is a double generate code for reading a single list element and return it
+                                val genResult = generateResultSetReadForPrimitiveType(funcRetResolved, 1)
+                                funcCode += genResult.genCode
+                                funcCodeParams = funcCodeParams.plus(elements = genResult.genCodeParams)
                             }
 
                             funcCode += "\n|} finally {" // RESULT_SET(END) of the - try finally
@@ -263,5 +208,147 @@ class DaoGenerator(
             codeGenerator = codeGenerator,
             aggregating = false
         )
+    }
+
+    private fun generateResultSetReadForPrimitiveType(primitiveType: KSType, indentLevel: Int) : PartialGenResult {
+        var genCode = ""
+        var genCodeParams = emptyArray<Any>()
+        val indentSpace1 = getIndentSpace(indentLevel)
+        val indentSpace2 = getIndentSpace(indentLevel + 1)
+        val mysqlTypeResolved = resolveDataTypeToMysqlType(primitiveType.toTypeName())
+
+        genCode += "\n|${indentSpace1}if (_resultSet.next()){"
+        genCode += "\n|${indentSpace2}val _item : ${mysqlTypeResolved.type}"
+        genCode += "\n|${indentSpace2}return _item"
+        genCode += "\n|${indentSpace1}}"
+
+        return PartialGenResult(genCode, genCodeParams)
+    }
+
+    /**
+     * Generate code for reading all rows of the [ResultSet] to a List<T> of a given T type
+     *
+     * @param funcRetTypeParam  The DAO function return type
+     * @param indentLevel       The indentation level to be used in the generated code, inherit from parent indent
+     * @return [PartialGenResult] that contains the generated code and also the parameters used in its string format
+     */
+    private fun generateResultSetReadForListReturnType(funcRetTypeParam: KSTypeReference?, indentLevel: Int) : PartialGenResult {
+        var genCode = ""
+        var genCodeParams = emptyArray<Any>()
+        val indentSpace1 = getIndentSpace(indentLevel)
+        val indentSpace2 = getIndentSpace(indentLevel + 1)
+        var strListItemInstance = ""
+        var strCursorIndexes = ""
+        var strReadCursorRows = "\n|${indentSpace1}while(_resultSet.next()) {"
+        if (funcRetTypeParam == null) {
+            // If list Type parameter not resolved notify user through an exception.
+            throw Exception("List<T> typeParamClass is null.")
+        }
+        val funcRetTypeParamClass = (funcRetTypeParam.resolve().declaration as KSClassDeclaration)
+        val funcRetListClassProps = funcRetTypeParamClass.getDeclaredProperties().iterator()
+
+        strReadCursorRows += "\n|${indentSpace2}val _item : ${funcRetTypeParamClass.simpleName.asString()}"
+        strListItemInstance += "\n|${indentSpace2}_item = ${funcRetTypeParamClass.simpleName.asString()}("
+
+        while(funcRetListClassProps.hasNext()) {
+            val propAt = funcRetListClassProps.next()
+            var propAtColName = propAt.simpleName.asString()
+            val propAtAnnotColInfo = propAt.getAnnotationsByType(ColumnInfo::class).firstOrNull()
+            val propAtAttrTypeGen = resolveDataTypeToMysqlType(propAt.type.toTypeName())
+            if (propAtAnnotColInfo != null && propAtAnnotColInfo.name != ColumnInfo.INHERIT_FIELD_NAME) {
+                propAtColName = propAtAnnotColInfo.name
+            }
+
+            strCursorIndexes += "\n"
+            strCursorIndexes += """|${indentSpace1}val _cursorIndexOf${propAtColName._camelCase()} = ResultSetUtil.getColumnIndexOrThrow(_colInfoMap, %S)""".trimIndent()
+
+            // Append the column name to string format params
+            genCodeParams += propAtColName
+
+            strReadCursorRows += "\n"
+            strReadCursorRows += """
+                |${indentSpace2}val _tmp${propAtColName._camelCase()} : ${propAtAttrTypeGen.type} = _resultSet.get${propAtAttrTypeGen.getType}(_cursorIndexOf${propAtColName._camelCase()})
+            """.trimIndent()
+
+            strListItemInstance += "_tmp${propAtColName._camelCase()}" + if (funcRetListClassProps.hasNext()) ","  else ""
+        }
+        strListItemInstance += ")"
+        strReadCursorRows += strListItemInstance
+        strReadCursorRows += "\n|${indentSpace2}_result += _item"
+        strReadCursorRows += "\n|${indentSpace1}}"
+
+        genCode += strCursorIndexes
+        genCode += "\n|${indentSpace1}val _result = ArrayList<${funcRetTypeParamClass.simpleName.asString()}>(_resultSet.fetchSize)"
+        genCode += strReadCursorRows
+        genCode += "\n|${indentSpace1}return _result"
+
+        return PartialGenResult(genCode, genCodeParams)
+    }
+
+    /**
+     * Resolves a given data type to the generated code: val myTypeVar : type = ResultSet.getString(?).
+     * The String from the get expression is the getType var
+     *
+     * @param type
+     * @return [MysqlTypeGen] Types resolved
+     */
+    private fun resolveDataTypeToMysqlType(type: TypeName) : MysqlTypeGen {
+        val mType: String
+        val mGetType : String
+        when (type) {
+            String::class.asTypeName(), String::class.asTypeName().copy(true) -> {
+                val optional = type == String::class.asTypeName().copy(true)
+                mType = "String" + if (optional) "?" else ""
+                mGetType = "String"
+            }
+            Int::class.asTypeName(), Int::class.asTypeName().copy(true) -> {
+                val optional = type == Int::class.asTypeName().copy(true)
+                mType = "Int" + if (optional) "?" else ""
+                mGetType = "Int"
+            }
+            Long::class.asTypeName(), Long::class.asTypeName().copy(true) -> {
+                val optional = type == Long::class.asTypeName().copy(true)
+                mType = "Long" + if (optional) "?" else ""
+                mGetType = "Long"
+            }
+            Float::class.asTypeName(), Float::class.asTypeName().copy(true) -> {
+                val optional = type == Float::class.asTypeName().copy(true)
+                mType = "Float" + if (optional) "?" else ""
+                mGetType = "Float"
+            }
+            Double::class.asTypeName(), Double::class.asTypeName().copy(true) -> {
+                val optional = type == Double::class.asTypeName().copy(true)
+                mType = "Double" + if (optional) "?" else ""
+                mGetType = "Double"
+            }
+            else -> {
+                mType = "Any"
+                mGetType = "Object"
+            }
+        }
+
+        return MysqlTypeGen(
+            mType,
+            mGetType
+        )
+    }
+
+    /**
+     * Get indentation space for a level multiple of a space
+     *
+     * @param level     The level of the indentation.
+     * @param spaces    The amount of indentation space used for one level.
+     * @return [String] Indentation space
+     */
+    private fun getIndentSpace(level: Int, spaces : Int = 2) : String {
+        var ident = ""
+        var strStep = ""
+        range(0, spaces).forEach {
+            strStep += " "
+        }
+        range(0, level).forEach {
+            ident += strStep
+        }
+        return ident
     }
 }

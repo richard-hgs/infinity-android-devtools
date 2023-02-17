@@ -59,7 +59,7 @@ object BindUtils {
                     }
 
                     // Join the query bind question mark
-                    "? "
+                    "?"
                 } else {
                     // The word is a query part. Join to the query
                     word

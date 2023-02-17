@@ -12,5 +12,7 @@ import com.infinity.mysql.annotation.Entity
 )
 class TableInfo(
     @ColumnInfo(name = "TABLE_NAME")
-    val tableName: String
+    val tableName: String,
+    @ColumnInfo(name = "SIZE_MB")
+    val diskSizeMb: Double
 )

@@ -25,9 +25,10 @@ class ServerConnVm @Inject constructor(
     }
 
     fun getTables() = viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
+        val dbDiskSize = mysqlDao.getDbDiskSize()
         val tableInfoList = mysqlDao.getTables()
         tableInfoList.forEach {
-            Log.d("ServerConnVm", "tableInfo: ${it.tableName}")
+            Log.d("ServerConnVm", "dbDiskSize: $dbDiskSize - tableInfo: ${it.tableName} - sizeMb: ${it.diskSizeMb}")
         }
     }
 }

@@ -11,6 +11,9 @@ import com.infinity.mysql.annotation.Query
  */
 @Dao
 interface MysqlDao {
-    @Query("SELECT * FROM information_schema.tables WHERE table_schema = :schema")
+    @Query("SELECT TABLE_NAME, ROUND((DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024, 5) AS SIZE_MB FROM information_schema.tables WHERE table_schema = :schema")
     fun getTables(schema : String = BuildConfig.DB_NAME) : List<TableInfo>
+
+    @Query("SELECT ROUND(SUM((DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024), 5) AS SIZE_MB FROM information_schema.tables WHERE table_schema = :schema")
+    fun getDbDiskSize(schema : String = BuildConfig.DB_NAME) : Double
 }
