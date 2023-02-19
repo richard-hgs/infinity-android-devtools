@@ -6,10 +6,7 @@ import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -31,6 +28,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
+import com.infinity.devtools.ui.components.sharedelement.SharedElement
+import com.infinity.devtools.ui.components.sharedelement.SharedElementsTransitionSpec
 
 @Composable
 fun AppTextField(
@@ -48,6 +49,10 @@ fun AppTextField(
     singleLine: Boolean = true,
     maxLength: Int? = null,
     isPassword: Boolean = false,
+    sharedElTransitionKey: String? = null,
+    sharedElTransitionScreenKey: String? = null,
+    sharedElTransitionSpec: SharedElementsTransitionSpec? = null,
+    sharedElTransitionEnd: Boolean = false
 ) {
     // Fix caret position at first time TextFieldValue is filled text selection is set to zero.
     var lastFixCaretValue by remember { mutableStateOf(text) }
@@ -96,6 +101,10 @@ fun AppTextField(
         singleLine = singleLine,
         maxLength = maxLength,
         isPassword = isPassword,
+        sharedElTransitionKey = sharedElTransitionKey,
+        sharedElTransitionScreenKey = sharedElTransitionScreenKey,
+        sharedElTransitionSpec = sharedElTransitionSpec,
+        sharedElTransitionEnd = sharedElTransitionEnd
     )
 }
 
@@ -115,6 +124,10 @@ fun AppTextField(
     singleLine: Boolean = true,
     maxLength: Int? = null,
     isPassword: Boolean = false,
+    sharedElTransitionKey: String? = null,
+    sharedElTransitionScreenKey: String? = null,
+    sharedElTransitionSpec: SharedElementsTransitionSpec? = null,
+    sharedElTransitionEnd: Boolean = false
 ) {
     var isFocused by remember { mutableStateOf(false) }
 
@@ -126,54 +139,96 @@ fun AppTextField(
 
     val passwordVisible by rememberSaveable { mutableStateOf(false) }
 
-    CustomOutlinedTextField(
-        modifier = modifier.onFocusChanged {
-            isFocused = it.hasFocus
-        },
-        value = text,
-        onValueChange = {
-            if (maxLength != null) {
-                onChange(
-                    it.copy(text = it.text.take(maxLength))
-                )
-            } else {
-                onChange(it)
+    var colors = TextFieldDefaults.outlinedTextFieldColors()
+
+    if (sharedElTransitionKey != null && sharedElTransitionScreenKey != null && sharedElTransitionSpec != null && !sharedElTransitionEnd) {
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            textColor = Color.Transparent
+        )
+    }
+
+    ConstraintLayout {
+        val (textFieldRef, textLengthRef, sharedElText) = createRefs()
+        if (sharedElTransitionKey != null && sharedElTransitionScreenKey != null && sharedElTransitionSpec != null && !sharedElTransitionEnd) {
+            Column(modifier = Modifier.constrainAs(sharedElText) {
+                top.linkTo(textFieldRef.top, 8.dp)
+                start.linkTo(textFieldRef.start, 12.dp)
+                bottom.linkTo(textFieldRef.bottom)
+                height = Dimension.fillToConstraints
+            },
+                verticalArrangement = Arrangement.Center
+            ) {
+                SharedElement(
+                    key = sharedElTransitionKey,
+                    screenKey = sharedElTransitionScreenKey,
+                    transitionSpec = sharedElTransitionSpec
+                ) {
+                    Text(text = text.text, style = TextStyle(fontSize = fontSize))
+                }
             }
-        },
-        leadingIcon = leadingIcon,
-        textStyle = TextStyle(fontSize = fontSize),
-        keyboardOptions = KeyboardOptions(imeAction = imeAction, keyboardType = keyboardType),
-        keyboardActions = keyBoardActions,
-        enabled = isEnabled,
-        singleLine = singleLine,
+
+        }
+        CustomOutlinedTextField(
+            modifier = modifier.onFocusChanged {
+                isFocused = it.hasFocus
+            }.constrainAs(textFieldRef) {
+                top.linkTo(parent.top)
+                start.linkTo(parent.start)
+                end.linkTo(parent.end)
+            },
+            value = text,
+            onValueChange = {
+                if (maxLength != null) {
+                    onChange(
+                        it.copy(text = it.text.take(maxLength))
+                    )
+                } else {
+                    onChange(it)
+                }
+            },
+            leadingIcon = leadingIcon,
+            textStyle = TextStyle(fontSize = fontSize),
+            colors = colors,
+            keyboardOptions = KeyboardOptions(imeAction = imeAction, keyboardType = keyboardType),
+            keyboardActions = keyBoardActions,
+            enabled = isEnabled,
+            singleLine = singleLine,
 //        colors = TextFieldDefaults.outlinedTextFieldColors(
 //            focusedBorderColor = Color.Black,
 //            unfocusedBorderColor = Color.Gray,
 //            disabledBorderColor = Color.Gray,
 //            disabledTextColor = Color.Black
 //        ),
-        label = {
-            Text(text = placeholder, style = TextStyle(fontSize = labelFontSize.sp, color = Color.Gray))
-        },
-        visualTransformation = if (!isPassword || passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-        trailingIcon = if (isPassword) {
-            null
+            label = {
+                Text(text = placeholder, style = TextStyle(fontSize = labelFontSize.sp, color = Color.Gray))
+            },
+            visualTransformation = if (!isPassword || passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = if (isPassword) {
+                null
 //            {
 //                val image = if (passwordVisible)
 //                    Icons.Default.
 //                else Icons.Filled.VisibilityOff
 //            }
-        } else {
-            null
-        }
-    )
-    if (maxLength != null) {
-        Text(
-            text = "${text.text.length} / $maxLength",
-            textAlign = TextAlign.End,
-            style = MaterialTheme.typography.caption,
-            modifier = modifierLength.fillMaxWidth().padding(end = 16.dp)
+            } else {
+                null
+            }
         )
+        if (maxLength != null) {
+            Text(
+                text = "${text.text.length} / $maxLength",
+                textAlign = TextAlign.End,
+                style = MaterialTheme.typography.caption,
+                modifier = modifierLength.fillMaxWidth()
+                    .padding(end = 16.dp)
+                    .constrainAs(textLengthRef) {
+                        top.linkTo(textFieldRef.bottom)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                        bottom.linkTo(parent.bottom)
+                    }
+            )
+        }
     }
 }
 

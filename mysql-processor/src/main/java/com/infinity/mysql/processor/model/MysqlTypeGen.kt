@@ -11,5 +11,6 @@ import java.sql.ResultSet
  */
 data class MysqlTypeGen(
     val type: String,
-    val getType: String
+    val getType: String,
+    val isOptional: Boolean
 )

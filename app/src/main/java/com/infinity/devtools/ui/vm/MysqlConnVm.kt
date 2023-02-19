@@ -8,10 +8,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.infinity.devtools.R
 import com.infinity.devtools.constants.Constants.NO_VALUE
-import com.infinity.devtools.model.sqlite.MysqlConn
 import com.infinity.devtools.di.validators.MysqlValidator
 import com.infinity.devtools.domain.repository.MysqlConnRepo
 import com.infinity.devtools.domain.resources.ResourcesProvider
+import com.infinity.devtools.model.sqlite.MysqlConn
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -33,6 +33,10 @@ class MysqlConnVm @Inject constructor(
     @Suppress("unused")
     fun getConn(id: Int) = viewModelScope.launch(Dispatchers.IO) {
         mysqlConn = repo.getMysqlConnFromRoom(id) ?: mysqlConn
+    }
+
+    fun setConn(conn: MysqlConn) {
+        mysqlConn = conn
     }
 
     fun addConn(conn: MysqlConn) = viewModelScope.launch(Dispatchers.IO) {

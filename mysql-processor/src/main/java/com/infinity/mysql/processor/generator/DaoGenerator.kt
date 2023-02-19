@@ -159,17 +159,13 @@ class DaoGenerator(
                             // RESULT_SET(START) of the - try finally - Create a try finally to be able to close resultSet even if an error occurs
                             funcCode += "\n|try {"
 
-                            // Get the map [String(colName)] => [ColumnInfo]
-                            funcCode += "\n|  val _colInfoMap = ResultSetUtil.mapResultColumns(_resultSet)"
-
                             // Get the indexes of the bind columns of the query
-
                             if (funcRetClass.toClassName() == List::class.asClassName()) {
                                 // Return type is a list generate code for iterating ResultSet and read the column values to the val _result List<T>
                                 val genResult = generateResultSetReadForListReturnType(funcRetTypeParam, 1)
                                 funcCode += genResult.genCode
                                 funcCodeParams = funcCodeParams.plus(elements = genResult.genCodeParams)
-                            } else if (funcRetClass.toClassName() == Double::class.asClassName()) {
+                            } else if (isClassNamePrimitive(funcRetClass.toClassName())) {
                                 // Return type is a double generate code for reading a single list element and return it
                                 val genResult = generateResultSetReadForPrimitiveType(funcRetResolved, 1)
                                 funcCode += genResult.genCode
@@ -216,11 +212,24 @@ class DaoGenerator(
         val indentSpace1 = getIndentSpace(indentLevel)
         val indentSpace2 = getIndentSpace(indentLevel + 1)
         val mysqlTypeResolved = resolveDataTypeToMysqlType(primitiveType.toTypeName())
-
-        genCode += "\n|${indentSpace1}if (_resultSet.next()){"
-        genCode += "\n|${indentSpace2}val _item : ${mysqlTypeResolved.type}"
-        genCode += "\n|${indentSpace2}return _item"
+        genCode += "\n|${indentSpace1}val _cursorIndexOfItem = 1"
+        genCode += "\n|${indentSpace1}val _item : ${mysqlTypeResolved.type}"
+        genCode += "\n|${indentSpace1}if (_resultSet.next()) {"
+        genCode += "\n|${indentSpace2}_item = _resultSet.get${mysqlTypeResolved.getType}(_cursorIndexOfItem)"
         genCode += "\n|${indentSpace1}}"
+        if (!mysqlTypeResolved.isOptional) {
+            genCode += " else {"
+            genCode += "\n|${indentSpace2}throw %T(%S)"
+            genCode += "\n|${indentSpace1}}"
+            genCodeParams += NullPointerException::class
+            genCodeParams += "Could not read the query result, no result received for a non optional DAO return of type ${mysqlTypeResolved.type}"
+        } else {
+            genCode += " else {"
+            genCode += "\n|${indentSpace2}_item = null"
+            genCode += "\n|${indentSpace1}}"
+        }
+
+        genCode += "\n|${indentSpace1}return _item"
 
         return PartialGenResult(genCode, genCodeParams)
     }
@@ -249,6 +258,9 @@ class DaoGenerator(
 
         strReadCursorRows += "\n|${indentSpace2}val _item : ${funcRetTypeParamClass.simpleName.asString()}"
         strListItemInstance += "\n|${indentSpace2}_item = ${funcRetTypeParamClass.simpleName.asString()}("
+
+        // Get the map [String(colName)] => [ColumnInfo]
+        genCode += "\n|${indentSpace1}val _colInfoMap = ResultSetUtil.mapResultColumns(_resultSet)"
 
         while(funcRetListClassProps.hasNext()) {
             val propAt = funcRetListClassProps.next()
@@ -295,33 +307,40 @@ class DaoGenerator(
     private fun resolveDataTypeToMysqlType(type: TypeName) : MysqlTypeGen {
         val mType: String
         val mGetType : String
+        val isOptional : Boolean
         when (type) {
             String::class.asTypeName(), String::class.asTypeName().copy(true) -> {
-                val optional = type == String::class.asTypeName().copy(true)
-                mType = "String" + if (optional) "?" else ""
+                isOptional = type == String::class.asTypeName().copy(true)
+                mType = "String" + if (isOptional) "?" else ""
                 mGetType = "String"
             }
+            Boolean::class.asTypeName(), Boolean::class.asTypeName().copy(true) -> {
+                isOptional = type == Boolean::class.asTypeName().copy(true)
+                mType = "Boolean" + if (isOptional) "?" else ""
+                mGetType = "Boolean"
+            }
             Int::class.asTypeName(), Int::class.asTypeName().copy(true) -> {
-                val optional = type == Int::class.asTypeName().copy(true)
-                mType = "Int" + if (optional) "?" else ""
+                isOptional = type == Int::class.asTypeName().copy(true)
+                mType = "Int" + if (isOptional) "?" else ""
                 mGetType = "Int"
             }
             Long::class.asTypeName(), Long::class.asTypeName().copy(true) -> {
-                val optional = type == Long::class.asTypeName().copy(true)
-                mType = "Long" + if (optional) "?" else ""
+                isOptional = type == Long::class.asTypeName().copy(true)
+                mType = "Long" + if (isOptional) "?" else ""
                 mGetType = "Long"
             }
             Float::class.asTypeName(), Float::class.asTypeName().copy(true) -> {
-                val optional = type == Float::class.asTypeName().copy(true)
-                mType = "Float" + if (optional) "?" else ""
+                isOptional = type == Float::class.asTypeName().copy(true)
+                mType = "Float" + if (isOptional) "?" else ""
                 mGetType = "Float"
             }
             Double::class.asTypeName(), Double::class.asTypeName().copy(true) -> {
-                val optional = type == Double::class.asTypeName().copy(true)
-                mType = "Double" + if (optional) "?" else ""
+                isOptional = type == Double::class.asTypeName().copy(true)
+                mType = "Double" + if (isOptional) "?" else ""
                 mGetType = "Double"
             }
             else -> {
+                isOptional = false
                 mType = "Any"
                 mGetType = "Object"
             }
@@ -329,8 +348,27 @@ class DaoGenerator(
 
         return MysqlTypeGen(
             mType,
-            mGetType
+            mGetType,
+            isOptional
         )
+    }
+
+    /**
+     * Check if the given className is a primitive type class or not
+     *
+     * @param className [ClassName] to check the className against primitive type class
+     * @return true=Is a primitive, false=Is nota a primitive
+     */
+    private fun isClassNamePrimitive(className: ClassName) : Boolean {
+        return when(className) {
+            String::class.asClassName(), String::class.asClassName().copy(true) -> true
+            Boolean::class.asClassName(), Boolean::class.asClassName().copy(true) -> true
+            Int::class.asClassName(), Int::class.asClassName().copy(true) -> true
+            Long::class.asClassName(), Long::class.asClassName().copy(true) -> true
+            Float::class.asClassName(), Float::class.asClassName().copy(true) -> true
+            Double::class.asClassName(), Double::class.asClassName().copy(true) -> true
+            else -> false
+        }
     }
 
     /**

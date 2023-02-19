@@ -12,7 +12,21 @@ import com.infinity.mysql.annotation.Entity
 )
 class TableInfo(
     @ColumnInfo(name = "TABLE_NAME")
-    val tableName: String,
+    val tableName: String?,
+    @ColumnInfo(name = "CREATE_TIME")
+    val createTime: String,
+    @ColumnInfo(name = "UPDATE_TIME")
+    val updateTime: String?,
+    @ColumnInfo(name = "TABLE_COLLATION")
+    val collation: String?,
+    @ColumnInfo(name = "ENGINE")
+    val engine: String?,
+    @ColumnInfo(name = "TABLE_COMMENT")
+    val comment: String?,
+    @ColumnInfo(name = "AUTO_INCREMENT")
+    val autoIncrement: Long?,
+    @ColumnInfo(name = "TABLE_ROWS")
+    val rowCount: Long?,
     @ColumnInfo(name = "SIZE_MB")
-    val diskSizeMb: Double
+    val diskSizeMb: Double?,
 )
