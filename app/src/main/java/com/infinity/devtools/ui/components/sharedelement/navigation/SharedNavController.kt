@@ -1,9 +1,13 @@
+@file:Suppress("FunctionName")
+
 package com.infinity.devtools.ui.components.sharedelement.navigation
 
 import android.content.Context
+import android.content.res.Resources.NotFoundException
 import android.net.http.SslCertificate.restoreState
 import android.os.Bundle
 import androidx.annotation.CallSuper
+import androidx.annotation.MainThread
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
@@ -15,7 +19,9 @@ import androidx.compose.ui.platform.LocalContext
  *
  */
 class SharedNavController(context: Context) {
-    val currentDestination = mutableStateOf(SharedNavDestination.EMPTY)
+    val currentDestination = mutableStateOf(SharedNavStackDest.EMPTY)
+
+    private val backQueue: ArrayDeque<SharedNavStackDest> = ArrayDeque()
 
     var graph: SharedNavGraph? = null
         set(value) {
@@ -27,13 +33,21 @@ class SharedNavController(context: Context) {
      * Initializes the [currentDestination] to the [SharedNavGraph.startDestinationRoute] for the first time graph is set
      */
     private fun initParams() {
-        if (currentDestination.value == SharedNavDestination.EMPTY) {
+        if (currentDestination.value == SharedNavStackDest.EMPTY) {
             val mGraph = safeGetGraph()
-            val startDestination = findDestination(mGraph.startDestinationRoute)
 
-            if (startDestination != null) {
-                currentDestination.value = startDestination
+            if (backQueue.isEmpty()) {
+                // Initialize for the first time the navigation stack, by setting the start destination
+                val startDestination = findDestination(mGraph.startDestinationRoute)
+                if (startDestination != null) {
+                    backQueue.addLast(SharedNavStackDest(startDestination.route))
+                } else {
+                    throw NotFoundException("Start destination route \"${mGraph.startDestinationRoute}\" not found.")
+                }
             }
+
+            // Setup current destination to last destination from the back queue
+            currentDestination.value = backQueue.last()
         }
     }
 
@@ -64,6 +78,53 @@ class SharedNavController(context: Context) {
     }
 
     /**
+     * Navigate to the given route destination
+     *
+     * @param route Route name
+     */
+    fun navigate(route: String) {
+        val destination = findDestination(route)
+        if (destination != null) {
+            backQueue.addLast(SharedNavStackDest(destination.route))
+            currentDestination.value = backQueue.last()
+        } else {
+            throw NotFoundException("The route name \"$route\" could not be found.")
+        }
+    }
+
+    /**
+     * Attempts to pop the controller's back stack. Analogous to when the user presses
+     * the system [Back][android.view.KeyEvent.KEYCODE_BACK] button when the associated
+     * navigation host has focus.
+     *
+     * @return true if the stack was popped at least once and the user has been navigated to
+     * another destination, false otherwise
+     */
+    @MainThread
+    fun popBackStack(): Boolean {
+        return if (backQueue.isEmpty()) {
+            // Nothing to pop if the back stack is empty
+            false
+        } else {
+            // Pop backQueue and set the current destination to the previous one
+            backQueue.removeLast()
+            currentDestination.value = backQueue.last()
+            true
+        }
+    }
+
+    /**
+     * Get content for destination
+     *
+     * @param route Route to get composable content
+     * @return      Composable content to be shown
+     */
+    fun getContentForDestination(route: String) : @Composable () -> Unit {
+        val destination = findDestination(route)
+        return destination!!.content
+    }
+
+    /**
      * Saves all navigation controller state to a Bundle.
      *
      * State may be restored from a bundle returned from this method by calling
@@ -75,7 +136,7 @@ class SharedNavController(context: Context) {
     @CallSuper
     fun saveState(): Bundle {
         val bundle = Bundle()
-
+        bundle.putParcelableArray("back_queue", backQueue.toTypedArray())
         return bundle
     }
 
@@ -86,11 +147,19 @@ class SharedNavController(context: Context) {
      * State may be saved to a bundle by calling [saveState].
      * Restoring controller state is the responsibility of a [SharedElementsNavHost].
      *
-     * @param navState state bundle to restore
+     * @param savedState state bundle to restore
      */
     @CallSuper
-    fun restoreState(navState: Bundle?) {
-
+    @Suppress("DEPRECATION")
+    fun restoreState(savedState: Bundle?) {
+        if (savedState != null) {
+            val savedQueue = savedState.getParcelableArray("back_queue")
+            if (savedQueue != null) {
+                for (queue in savedQueue) {
+                    backQueue.addLast(queue as SharedNavStackDest)
+                }
+            }
+        }
     }
 }
 

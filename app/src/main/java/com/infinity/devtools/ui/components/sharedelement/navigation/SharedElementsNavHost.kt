@@ -3,8 +3,10 @@
 package com.infinity.devtools.ui.components.sharedelement.navigation
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.clickable
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 
 /**
  * Created by richard on 19/02/2023 14:20
@@ -47,7 +49,8 @@ fun SharedElementsNavHost(
     navController.graph = graph
 
     Crossfade(navController.currentDestination.value) {
-        it.content()
+        val content = navController.getContentForDestination(it.route)
+        content()
     }
 }
 
@@ -60,20 +63,27 @@ fun SharedNavGraphBuilder.composable(
 
 @Composable
 fun TestSharedNavHost() {
+    val navController = rememberSharedNavController()
     SharedElementsNavHost(
-        navController = rememberSharedNavController(),
+        navController = navController,
         startDestination = "Screen1"
     ) {
         composable(
             "Screen1",
         ) {
-            Text(text = "Screen 1")
+            Text(
+                modifier = Modifier.clickable { navController.navigate("Screen2") },
+                text = "Screen 1"
+            )
         }
 
         composable(
             "Screen2",
         ) {
-            Text(text = "Screen 2")
+            Text(
+                modifier = Modifier.clickable { navController.popBackStack() },
+                text = "Screen 2"
+            )
         }
     }
 }
