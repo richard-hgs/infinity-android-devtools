@@ -27,6 +27,26 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
+/**
+ * Custom application surface that supports ripple effect color changes
+ *
+ * @param onClick           Callback handler of click events. Will be called when user clicks on the element
+ * @param modifier          Surface root element modifier
+ * @param shape             Shape of the root element surface
+ * @param color             Background color of the surface
+ * @param contentColor      Content color of the surface
+ * @param border            Border stroke of the surface
+ * @param elevation         Elevation of the surface, also adds shadow effect
+ * @param interactionSource Iteration source used to listen for interaction changes
+ * @param indication        Indication to be shown when modified element is pressed. By default,
+ * indication from [LocalIndication] will be used. Pass `null` to show no indication, or
+ * current value from [LocalIndication] to show theme default
+ * @param enabled           Enables or disable surface click interations
+ * @param onClickLabel      Semantic / accessibility label for the [onClick] action
+ * @param role              The type of user interface element. Accessibility services might use this
+ * to describe the element or do customizations
+ * @param content           Content of the surface
+ */
 @Composable
 fun AppSurface(
     onClick: () -> Unit,
@@ -78,7 +98,10 @@ fun AppSurface(
     }
 }
 
-
+/**
+ * Shows a warning to debug minimum touch target size in layout inspector
+ * @return Composed Modifier
+ */
 internal fun Modifier.minimumTouchTargetSize(): Modifier = composed(
     inspectorInfo = debugInspectorInfo {
         name = "minimumTouchTargetSize"
@@ -98,9 +121,17 @@ internal fun Modifier.minimumTouchTargetSize(): Modifier = composed(
     }
 }
 
+/**
+ * A static variable that will be used to check if a minimum touch target size enforcement should be respected
+ */
 val LocalMinimumTouchTargetEnforcement: ProvidableCompositionLocal<Boolean> =
     staticCompositionLocalOf { true }
 
+/**
+ * Minimum touch target modifier used to measure surface content and check the minimun required size
+ *
+ * @property size   Minimum touch target size
+ */
 private class MinimumTouchTargetModifier(val size: DpSize) : LayoutModifier {
     override fun MeasureScope.measure(
         measurable: Measurable,
@@ -130,6 +161,14 @@ private class MinimumTouchTargetModifier(val size: DpSize) : LayoutModifier {
     }
 }
 
+/**
+ * Configures the color and elevation of the surface backgroundColor modifier
+ *
+ * @param color             Surface color
+ * @param elevationOverlay  Elevation overlay
+ * @param absoluteElevation Elevation size
+ * @return  Color to be used in backgroundColor
+ */
 @Composable
 private fun surfaceColorAtElevation(
     color: Color,
@@ -143,6 +182,15 @@ private fun surfaceColorAtElevation(
     }
 }
 
+/**
+ * Creates a Modifier extension that supports the creation of a surface in any composable that accepts
+ * Modifier parameters
+ *
+ * @param shape             Shape of the surface
+ * @param backgroundColor   Background color of the surface
+ * @param border            Border stroke of the surface
+ * @param elevation         Elevation size also adds a shadow effect
+ */
 private fun Modifier.surface(
     shape: Shape,
     backgroundColor: Color,

@@ -39,6 +39,14 @@ import com.simform.ssjetpackcomposeprogressbuttonlibrary.utils.twenty
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/**
+ * A simple ripple effect button
+ *
+ * @param onClick   Callback that handle clicks events
+ * @param modifier  Modifier attributes
+ * @param color     The color of the button
+ * @param content   The content of the button
+ */
 @Composable
 fun AppButton(
     onClick: () -> Unit,
@@ -55,6 +63,13 @@ fun AppButton(
     )
 }
 
+/**
+ * A simple transparent button with ripple effect
+ *
+ * @param onClick   Callback that handle click events
+ * @param modifier  Modifier attributes
+ * @param content   Content of the transparent button
+ */
 @Composable
 fun TransparentButton(
     onClick: () -> Unit,
@@ -78,6 +93,43 @@ fun TransparentButton(
     )
 }
 
+/**
+ * A custom button with a progress, error and success states
+ *
+ * @param modifier                  Modifier attributes
+ * @param type                      Button type, one of [SSButtonType.CIRCLE], [SSButtonType.WHEEL] and so on...
+ * @param width                     (Optional) Width of the button. If not informed fill max width
+ * @param height                    (Optional) Height of the button. If not informed uses the [DEF_BTN_HEIGHT]
+ * @param onClick                   Callback that will handle click events
+ * @param assetColor                Color of the icons of the button
+ * @param buttonState               State of this button, one of [SSButtonState.FAILURE], [SSButtonState.IDLE], [SSButtonState.LOADING], [SSButtonState.SUCCESS]
+ * @param setButtonState            Change the button state
+ * @param buttonBorderStroke        Border stroke of the button
+ * @param blinkingIcon              The blink effect to be applied to [SSButtonState] icons
+ * @param cornerRadius              Corner radius of the button.
+ * @param speedMillis               The animation speed time of the button
+ * @param enabled                   Enables or Disables the button
+ * @param elevation                 Elevation that also adds shadow box effect
+ * @param colors                    Colors of the button
+ * @param padding                   Padding applied to the button
+ * @param alphaValue                Transparency of the button
+ * @param leftImagePainter          Changes left image icon
+ * @param rightImagePainter         Changes right image icon
+ * @param successIconPainter        Changes success icon
+ * @param failureIconPainter        Changes failure icon
+ * @param successIconColor          Success icon color
+ * @param failureIconColor          Failure icon color
+ * @param text                      Button text
+ * @param textModifier              Modifier applied to button text
+ * @param fontSize                  Font size applied to button text
+ * @param fontStyle                 Font style applied to button text
+ * @param fontFamily                Font family applied to button text
+ * @param fontWeight                Font weight applied to button text
+ * @param hourHandColor             ???
+ * @param customLoadingIconPainter  Changes loading icon
+ * @param customLoadingEffect       Changes loading effect
+ * @param customLoadingPadding      Changes loading padding
+ */
 @Composable
 fun ProgressButton(
     modifier: Modifier = Modifier,

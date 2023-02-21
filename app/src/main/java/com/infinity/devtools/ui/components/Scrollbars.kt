@@ -48,12 +48,23 @@ enum class ScrollbarSelectionMode {
 }
 
 /**
- * Scrollbar for Column
+ * Scrollbar for Column composable contents
  *
- * @param rightSide true -> right,  false -> left
- * @param thickness Thickness of the scrollbar thumb
- * @param padding   Padding of the scrollbar
- * @param thumbMinHeight Thumb minimum height proportional to total scrollbar's height (eg: 0.1 -> 10% of total)
+ * @param modifier              Modifier attributes
+ * @param state                 State of the content scroll
+ * @param rightSide             Thumb position: true -> right, false -> left
+ * @param thickness             Thickness of the scrollbar thumb
+ * @param padding               Padding of the scrollbar
+ * @param thumbModifier         Thumb modifier attributes
+ * @param thumbMinHeight        Thumb minimum height proportional to total scrollbar's height (eg: 0.1 -> 10% of total)
+ * @param thumbColor            Thumb color
+ * @param thumbSelectedColor    Thumb selected color
+ * @param thumbShape            Thumb shape form
+ * @param enabled               True=Scrollbar thumb enabled, False=Scrollbar thumb disabled
+ * @param selectionMode         [ScrollbarSelectionMode.Disabled] Disable thumb selection,
+ * [ScrollbarSelectionMode.Full] Allow thumb and scrollbar selection, [ScrollbarSelectionMode.Disabled] Disables selection in thumb and scrollbar.
+ * @param indicatorContent      Thumb indicator composable content
+ * @param content               Scrollable composable content
  */
 @Composable
 fun ColumnScrollbar(
@@ -109,13 +120,25 @@ fun ColumnScrollbar(
 }
 
 /**
- * Scrollbar for LazyColumn
+ * Scrollbar for Column composable content
  *
- * @param rightSide true -> right,  false -> left
- * @param thickness Thickness of the scrollbar thumb
- * @param padding   Padding of the scrollbar
- * @param thumbMinHeight Thumb minimum height proportional to total scrollbar's height (eg: 0.1 -> 10% of total)
- * @param visibleHeightDp Visible height of column view
+ * @param state                 State of the content scroll
+ * @param rightSide             true -> right,  false -> left
+ * @param thickness             Thickness of the scrollbar thumb
+ * @param padding               Padding of the scrollbar
+ * @param thumbModifier         Thumb modifier attributes
+ * @param thumbMinHeight        Thumb minimum height proportional to total scrollbar's height (eg: 0.1 -> 10% of total)
+ * @param thumbColor            Thumb color
+ * @param thumbSelectedColor    Thumb selected color
+ * @param thumbShape            Thumb shape form
+ * @param selectionMode         [ScrollbarSelectionMode.Disabled] Disable thumb selection,
+ * [ScrollbarSelectionMode.Full] Allow thumb and scrollbar selection, [ScrollbarSelectionMode.Disabled] Disables selection in thumb and scrollbar.
+ * @param indicatorContent      Thumb indicator composable content
+ * @param visibleHeightDp       Visible height of column view
+ * @param isSelected            True=Thumb or scrollbar is selected, False=Not selected
+ * @param setIsSelected         Set Thumb or scrollbar selected state
+ * @param isInAction            True=Scroll in progress, or thumb scroll in progress, False=No Scroll changes
+ * @param displacement          Thumb right position displacement, usually animated value when scroll is in action
  */
 @Composable
 fun ColumnScrollbar(

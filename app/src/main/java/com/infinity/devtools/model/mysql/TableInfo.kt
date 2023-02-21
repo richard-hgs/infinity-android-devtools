@@ -4,7 +4,17 @@ import com.infinity.mysql.annotation.ColumnInfo
 import com.infinity.mysql.annotation.Entity
 
 /**
- * Entity that will hold Mysql database table information
+ * Entity that will hold Online Mysql database table information
+ *
+ * @param tableName Name of the table
+ * @param createTime Timestamp when table was created
+ * @param updateTime Timestamp last time table was updated
+ * @param collation Collation encoding of the table
+ * @param engine Engine used in this table, like innodb or myisam
+ * @param comment Table commentaries
+ * @param autoIncrement The last auto-increment number from the table
+ * @param rowCount The total amount of rows this table has
+ * @param diskSizeMb The total disk size this table is using from the server
  */
 @Entity(
     tableName = "information_schema.tables"

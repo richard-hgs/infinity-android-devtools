@@ -8,6 +8,18 @@ import androidx.room.PrimaryKey
 import com.infinity.devtools.constants.Constants.NO_VALUE
 import com.infinity.devtools.constants.ConstantsDb.TABLE_MYSQL_CONN
 
+/**
+ * Entity that will hold local database connections
+ * The [name] must be unique, also the [host], [port] and [user] are unique together.
+ *
+ * @property id         Id auto-increment of the connection
+ * @property name       Database connection friendly name
+ * @property host       Database connection host
+ * @property port       Database connection port
+ * @property user       Database connection user
+ * @property pass       Database connection pass
+ * @property dbname     Database name
+ */
 @Entity(
     tableName = TABLE_MYSQL_CONN,
     indices = [

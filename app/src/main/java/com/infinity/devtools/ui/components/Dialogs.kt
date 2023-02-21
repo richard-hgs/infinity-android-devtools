@@ -21,6 +21,16 @@ import com.airbnb.lottie.compose.*
 import com.infinity.devtools.R
 import kotlin.math.max
 
+/**
+ * Animated warning dialog
+ *
+ * @param open  True=Shows dialog, False=Hides dialog
+ * @param msg   The message to be displayed
+ * @param icon  Composable icon to be displayed
+ * @param title Composable title to be displayed
+ * @param text  Composable text that uses the msg as content to be displayed
+ * @param buttons Composable buttons of dialog to be displayed
+ */
 @Composable
 fun WarningDialog(
     open: MutableState<Boolean>,
@@ -90,6 +100,19 @@ fun WarningDialog(
     )
 }
 
+/**
+ * Base dialog composable used by all dialogs
+ *
+ * @param open              True=Shows dialog, False=Hides dialog
+ * @param msg               The message to be displayed
+ * @param backgroundColor   Background color of the dialog
+ * @param contentColor      Content color of the dialog
+ * @param surfaceShape      Shape of the surface of the dialog
+ * @param icon              Composable icon of the dialog
+ * @param title             Composable title of the dialog
+ * @param text              Composable text of the dialog that uses msg as content
+ * @param buttons           Composable buttons of the dialog
+ */
 @Composable
 fun BaseDialog(
     open: MutableState<Boolean>,
@@ -310,19 +333,33 @@ internal fun ColumnScope.AlertDialogBaselineLayout(
     }
 }
 
+/**
+ * Padding used by title composable of the [BaseDialog]
+ */
 private val TitlePadding = Modifier.padding(start = 24.dp, end = 24.dp)
+/**
+ * Padding used by text message composable of the [BaseDialog]
+ */
 private val TextPadding = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 20.dp)
 
-// Baseline distance from the first line of the title to the top of the dialog
+/**
+ * Baseline distance from the first line of the title to the top of the dialog
+ */
 private val TitleBaselineDistanceFromTop = 20.sp
 
-// Baseline distance from the first line of the text to the last line of the title
+/**
+ * Baseline distance from the first line of the text to the last line of the title
+ */
 private val TextBaselineDistanceFromTitle = 30.sp
 
-// For dialogs with no title, baseline distance from the first line of the text to the top of the
-// dialog
+/**
+ * For dialogs with no title, baseline distance from the first line of the text to the top of the dialog
+ */
 private val TextBaselineDistanceFromTop = 38.sp
 
+/**
+ * Composable preview of the [WarningDialog]
+ */
 @Preview(showBackground = true)
 @Composable
 fun PreviewDialogWarning() {

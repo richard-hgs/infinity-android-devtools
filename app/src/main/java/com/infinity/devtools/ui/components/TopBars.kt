@@ -13,6 +13,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.infinity.devtools.R
 
+/**
+ * Default AppBarTop to be used in Scaffold
+ *
+ * @param title                 Title of the appbar or AppTitle if not provided
+ * @param homeIcon              Home icon or null
+ * @param onHomeClick           Callback that handles home icon click
+ * @param onOptionsItemClick    Callback that handles menu click
+ */
 @Composable
 fun AppTopBar(
     title: String = stringResource(R.string.app_name),
