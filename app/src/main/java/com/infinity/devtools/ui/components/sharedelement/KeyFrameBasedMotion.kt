@@ -3,10 +3,7 @@ package com.infinity.devtools.ui.components.sharedelement
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.lerp
 
-/**
- * Created by richard on 18/02/2023 13:44
- *
- */
+
 abstract class KeyframeBasedMotion : PathMotion {
 
     private var start = Offset.Unspecified

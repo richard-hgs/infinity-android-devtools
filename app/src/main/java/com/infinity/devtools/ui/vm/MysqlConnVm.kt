@@ -12,33 +12,57 @@ import com.infinity.devtools.di.validators.MysqlValidator
 import com.infinity.devtools.domain.repository.MysqlConnRepo
 import com.infinity.devtools.domain.resources.ResourcesProvider
 import com.infinity.devtools.model.sqlite.MysqlConn
+import com.infinity.devtools.ui.presentation.EditMysqlConnScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * ViewModel that handles local database connections
+ *
+ * @property repo       Repository
+ * @property resProv    Resources provider used to get resources
+ * @property validator  Validator used to validate mysql fields
+ */
 @HiltViewModel
 class MysqlConnVm @Inject constructor(
     private val repo: MysqlConnRepo,
     private val resProv: ResourcesProvider,
     private val validator: MysqlValidator
 ): ViewModel() {
-    var mysqlConn by mutableStateOf(MysqlConn(0, NO_VALUE, NO_VALUE, -1, NO_VALUE, NO_VALUE, NO_VALUE))
+    var mysqlConn by mutableStateOf(EMPTY_CONN)
 
     var errDialogOpen = mutableStateOf(false)
     var errDialogMsg by mutableStateOf("")
 
     val connections = repo.getMysqlConnsFromRoom()
 
+    /**
+     * Get a connection by it's id to be edited in [EditMysqlConnScreen]
+     *
+     * @param id    Connection id being edited
+     */
     @Suppress("unused")
     fun getConn(id: Int) = viewModelScope.launch(Dispatchers.IO) {
         mysqlConn = repo.getMysqlConnFromRoom(id) ?: mysqlConn
     }
 
-    fun setConn(conn: MysqlConn) {
-        mysqlConn = conn
+    /**
+     * Set a connection info to be edited in [EditMysqlConnScreen]
+     *
+     * @param conn  Connection info being edited
+     */
+    fun setConn(conn: MysqlConn?) {
+        mysqlConn = conn ?: EMPTY_CONN
     }
 
+    /**
+     * Save a new connection information in database. Uses [errDialogMsg] and [errDialogOpen] to show
+     * warnings if some is found.
+     *
+     * @param conn  Connection information
+     */
     fun addConn(conn: MysqlConn) = viewModelScope.launch(Dispatchers.IO) {
         try {
             val exists = repo.getMysqlConnFromRoom(conn.host, conn.port, conn.user)
@@ -54,6 +78,12 @@ class MysqlConnVm @Inject constructor(
         }
     }
 
+    /**
+     * Update a existing connection information in database. Uses [errDialogMsg] and [errDialogOpen] to show
+     * warnings if some is found.
+     *
+     * @param conn
+     */
     fun updateConn(conn: MysqlConn) = viewModelScope.launch(Dispatchers.IO) {
         try {
             if (validateFields(conn)) {
@@ -64,11 +94,23 @@ class MysqlConnVm @Inject constructor(
         }
     }
 
+    /**
+     * Deletes an existing connection information in database.
+     *
+     * @param conn
+     */
     fun deleteConn(conn: MysqlConn) = viewModelScope.launch(Dispatchers.IO) {
         repo.deleteMysqlConnFromRoom(conn)
     }
 
     // ================================ VALIDATORS ===================================
+    /**
+     * Validate a connection information if it's valid. Uses [errDialogMsg] and [errDialogOpen] to show
+     * warnings if some is found.
+     *
+     * @param conn Connection information to be validated
+     * @return true=Valid, false=Invalid
+     */
     private fun validateFields(conn: MysqlConn) : Boolean {
         if (!validator.connNameIsValid(conn.name)) {
             showErrorDialog(resProv.getString(R.string.err_conn_name_field_required))
@@ -97,6 +139,11 @@ class MysqlConnVm @Inject constructor(
         return true
     }
 
+    /**
+     * Shows a error dialog with a given message
+     *
+     * @param errMsg  Error message to be shown
+     */
     private fun showErrorDialog(errMsg: String) {
         errDialogMsg = errMsg
         errDialogOpen.value = true
@@ -149,5 +196,9 @@ class MysqlConnVm @Inject constructor(
 
     fun undoDeletion(conn: MysqlConn) {
         addConn(conn)
+    }
+
+    companion object {
+        val EMPTY_CONN = MysqlConn(0, NO_VALUE, NO_VALUE, -1, NO_VALUE, NO_VALUE, NO_VALUE)
     }
 }

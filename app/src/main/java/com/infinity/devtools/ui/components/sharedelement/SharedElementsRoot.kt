@@ -20,10 +20,6 @@ import com.infinity.devtools.ui.components.sharedelement.SharedElementTransition
 import com.infinity.devtools.ui.components.sharedelement.SharedElementTransition.WaitingForEndElementPosition
 import com.infinity.devtools.ui.components.sharedelement.SharedElementsTracker.State.*
 
-/**
- * Created by richard on 18/02/2023 13:25
- *
- */
 @Composable
 internal fun BaseSharedElement(
     elementInfo: SharedElementInfo,

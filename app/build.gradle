@@ -75,6 +75,13 @@ android {
     sourceSets.configureEach { // Allow generated ksp kotlin to be used
         kotlin.srcDir("$buildDir/generated/ksp/$name/kotlin/")
     }
+//    dokkaHtml {
+//        outputDirectory.set(file("${buildDir}/dokka"))
+//        footerMessage.set("(c) Custom Format Dokka example")
+//
+////        includes = ['src/main/java']
+////        dokkaFatJar.templateDirs = files("$rootDir/dokka-templates")
+//    }
 }
 
 dependencies {
@@ -131,6 +138,40 @@ dependencies {
 kapt {
     correctErrorTypes true
 }
+
+tasks.named("dokkaHtml").configure {
+    // Disable showing inherit member functions for classes
+    suppressInheritedMembers.set(true)
+    // Change dokka base html configuration
+    pluginsMapConfiguration.set([
+        "org.jetbrains.dokka.base.DokkaBase": """{
+            "footerMessage": "Your New Footer!",
+            "templatesDir": "${file("..\\dokka-templates").toString().replaceAll("\\\\", "\\\\\\\\")}"
+        }"""
+    ])
+}
+
+tasks.named("dokkaHtmlPartial").configure {
+    // Disable showing inherit member functions for classes
+    suppressInheritedMembers.set(true)
+}
+
+//tasks.withType(DokkaTask.class) {
+//    String dokkaBaseConfiguration = """
+//    {
+//      "customAssets": ["${file("assets/my-image.png")}"],
+//      "customStyleSheets": ["${file("assets/my-styles.css")}"],
+//      "footerMessage": "(c) 2022 MyOrg"
+//      "separateInheritedMembers": false,
+//      "templatesDir": "${file("dokka/templates")}",
+//      "mergeImplicitExpectActualDeclarations": false
+//    }
+//    """
+//    pluginsMapConfiguration.set(
+//        // fully qualified plugin name to json configuration
+//        ["org.jetbrains.dokka.base.DokkaBase": dokkaBaseConfiguration]
+//    )
+//}
 
 // Tasks
 //tasks.whenTaskAdded { task ->

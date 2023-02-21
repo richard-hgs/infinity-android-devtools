@@ -27,10 +27,6 @@ import androidx.compose.ui.util.lerp
 import androidx.compose.ui.zIndex
 import kotlin.math.roundToInt
 
-/**
- * Created by richard on 18/02/2023 13:48
- *
- */
 @Composable
 fun SharedMaterialContainer(
     key: Any,

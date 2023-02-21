@@ -5,10 +5,6 @@ import com.infinity.devtools.ui.components.sharedelement.DelayExitState.Invisibl
 import com.infinity.devtools.ui.components.sharedelement.DelayExitState.Visible
 
 /**
- * Created by richard on 18/02/2023 13:23
- *
- */
-/**
  * When [visible] becomes false, if transition is running, delay the exit of the content until
  * transition finishes. Note that you may need to call [SharedElementsRootScope.prepareTransition]
  * before [visible] becomes false to start transition immediately.

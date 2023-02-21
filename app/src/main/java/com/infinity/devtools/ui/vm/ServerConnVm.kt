@@ -11,8 +11,6 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Created by richard on 13/02/2023 20:29
- *
  * Model for server connection
  */
 @HiltViewModel

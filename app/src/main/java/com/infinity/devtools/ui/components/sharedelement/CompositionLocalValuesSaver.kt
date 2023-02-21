@@ -8,10 +8,7 @@ import androidx.compose.material.LocalContentColor
 import androidx.compose.material.LocalTextStyle
 import androidx.compose.runtime.*
 
-/**
- * Created by richard on 18/02/2023 13:42
- *
- */
+
 @Suppress("UNCHECKED_CAST")
 private val compositionLocalList = listOf(
     LocalAbsoluteElevation,

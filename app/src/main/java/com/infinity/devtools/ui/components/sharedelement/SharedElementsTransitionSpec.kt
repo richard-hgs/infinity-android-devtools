@@ -1,9 +1,5 @@
 package com.infinity.devtools.ui.components.sharedelement
 
-/**
- * Created by richard on 18/02/2023 13:30
- *
- */
 import androidx.compose.animation.core.AnimationConstants
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FastOutSlowInEasing

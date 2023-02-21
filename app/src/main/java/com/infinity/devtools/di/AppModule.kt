@@ -18,8 +18,6 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 /**
- * Created by richard on 04/02/2023 23:42
- *
  * Application module of Hilt Dependency Injection
  */
 @Module

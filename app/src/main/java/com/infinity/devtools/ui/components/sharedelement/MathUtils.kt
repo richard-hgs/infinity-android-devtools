@@ -6,10 +6,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.ScaleFactor
 import androidx.compose.ui.layout.lerp
 
-/**
- * Created by richard on 18/02/2023 13:41
- *
- */
+
 internal val Rect.area: Float
     get() = width * height
 

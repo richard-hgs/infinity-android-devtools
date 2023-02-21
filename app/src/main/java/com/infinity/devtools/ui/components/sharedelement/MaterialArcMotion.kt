@@ -2,10 +2,7 @@ package com.infinity.devtools.ui.components.sharedelement
 
 import androidx.compose.ui.geometry.Offset
 
-/**
- * Created by richard on 18/02/2023 13:45
- *
- */
+
 class MaterialArcMotion : KeyframeBasedMotion() {
 
     override fun getKeyframes(start: Offset, end: Offset): Pair<FloatArray, LongArray> =

@@ -6,10 +6,6 @@ import androidx.compose.ui.util.packFloats
 import androidx.compose.ui.util.unpackFloat1
 import androidx.compose.ui.util.unpackFloat2
 
-/**
- * Created by richard on 18/02/2023 13:31
- *
- */
 @JvmInline
 @Immutable
 value class ProgressThresholds(private val packedValue: Long) {

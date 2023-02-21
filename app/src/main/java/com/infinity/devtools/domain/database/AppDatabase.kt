@@ -8,6 +8,9 @@ import com.infinity.devtools.constants.ConstantsDb.DB_NAME
 import com.infinity.devtools.constants.ConstantsDb.DB_VERSION
 import com.infinity.devtools.model.sqlite.MysqlConn
 
+/**
+ * Application local database used to persist data.
+ */
 @Database(
     entities = [
         MysqlConn::class
@@ -23,6 +26,13 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         var INSTANCE : AppDatabase? = null
 
+        /**
+         * Create a singleton instance of our database.
+         * Called internally by the [RoomDatabase] when a connection with database is requested.
+         *
+         * @param context Context of the database instance
+         * @return [AppDatabase] instance
+         */
         fun getDatabase(context: Context): AppDatabase {
             if (INSTANCE == null) {
                 INSTANCE = Room.databaseBuilder(
@@ -39,5 +49,10 @@ abstract class AppDatabase : RoomDatabase() {
         }
     }
 
+    /**
+     * Return database connection DAO interface
+     *
+     * @return [MysqlConnDao] interface
+     */
     abstract fun getMysqlConnDao(): MysqlConnDao
 }

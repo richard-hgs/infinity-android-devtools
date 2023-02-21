@@ -1,5 +1,10 @@
 package com.infinity.devtools.constants
 
+import com.infinity.devtools.ui.navigation.Screen
+
+/**
+ * Constants used by [Screen] to define route names
+ */
 object ConstantsScreen {
     const val SPLASH_SCREEN: String = "splash"
     const val MYSQL_CONNS_SCREEN: String = "mysql_conns"

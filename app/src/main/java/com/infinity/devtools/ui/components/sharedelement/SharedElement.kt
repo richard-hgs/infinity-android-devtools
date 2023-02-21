@@ -13,11 +13,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.zIndex
 
-
-/**
- * Created by richard on 18/02/2023 13:53
- *
- */
 @Composable
 fun SharedElement(
     key: Any,

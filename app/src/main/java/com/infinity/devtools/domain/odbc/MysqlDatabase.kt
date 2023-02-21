@@ -2,19 +2,23 @@ package com.infinity.devtools.domain.odbc
 
 import com.infinity.devtools.BuildConfig
 import com.infinity.mysql.Mysql
-import com.infinity.mysql.management.MysqlConnInfo
 import com.infinity.mysql.annotation.Database
+import com.infinity.mysql.management.MysqlConnInfo
 
 /**
- * Created by richard on 05/02/2023 15:33
- *
- * Mysql Database Connection
+ * Online Mysql Database Connection
  */
 @Database
 abstract class MysqlDatabase : com.infinity.mysql.MysqlDatabase() {
     companion object {
         var INSTANCE : MysqlDatabase? = null
 
+        /**
+         * Create a singleton instance of our database.
+         * Called internally by the [com.infinity.mysql.MysqlDatabase] when a connection with database is requested.
+         *
+         * @return [MysqlDatabase] instance
+         */
         fun getDatabase(): MysqlDatabase {
             if (INSTANCE == null) {
                 // NOTE: You can change to your test server the information inside project root file: "local.properties"

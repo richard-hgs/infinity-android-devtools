@@ -7,10 +7,7 @@ import androidx.compose.ui.unit.Constraints
 import kotlin.math.max
 import kotlin.math.min
 
-/**
- * Created by richard on 18/02/2023 13:43
- *
- */
+
 @Composable
 internal fun ElementContainer(
     modifier: Modifier,

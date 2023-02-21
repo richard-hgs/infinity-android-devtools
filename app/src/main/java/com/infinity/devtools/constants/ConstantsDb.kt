@@ -1,7 +1,19 @@
 package com.infinity.devtools.constants
 
+import com.infinity.devtools.domain.database.AppDatabase
+
+/**
+ * Local database version, name, tables and columns names
+ */
 object ConstantsDb {
+
+    /**
+     * Database version used in [AppDatabase]
+     */
     const val DB_VERSION = 1
+    /**
+     * Database name used in [AppDatabase]
+     */
     const val DB_NAME = "database"
 
     const val TABLE_MYSQL_CONN = "mysql_connection"

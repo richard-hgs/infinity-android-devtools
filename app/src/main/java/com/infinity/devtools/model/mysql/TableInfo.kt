@@ -4,7 +4,6 @@ import com.infinity.mysql.annotation.ColumnInfo
 import com.infinity.mysql.annotation.Entity
 
 /**
- * Created by richard on 07/02/2023 21:57
  * Entity that will hold Mysql database table information
  */
 @Entity(
