@@ -89,7 +89,7 @@ fun SharedElementsNavHost(
         // Compose the current destination content on screen
         Crossfade(
             targetState = navController.currentDestination.value,
-            animationSpec = tween(1000)
+            animationSpec = tween(500)
         ) {
             val content = navController.getContentForDestination(it.route)
             content(it)

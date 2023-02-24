@@ -50,13 +50,13 @@ fun MysqlConnScreen(
 ) {
 //    Log.d("MysqlConnScreen", "composed")
     val fadeOutTransitionSpec = MaterialContainerTransformSpec(
-        durationMillis = 1000,
+        durationMillis = 500,
         fadeMode = FadeMode.Out
     )
     val crossFadeTransitionSpec = SharedElementsTransitionSpec(
-        durationMillis = 1000,
+        durationMillis = 500,
         fadeMode = FadeMode.Cross,
-        fadeProgressThresholds = ProgressThresholds(0.10f, 0.40f)
+        fadeProgressThresholds = ProgressThresholds(0f, 1f)
     )
 
     val coroutine = rememberCoroutineScope()
@@ -181,26 +181,30 @@ fun MysqlConnScreen(
                             }
                         }
                     ) {
-                        AppSurface(
-                            modifier = Modifier.fillMaxWidth()
-                                .padding(bottom = 4.dp),
+                        SharedMaterialContainer(
+                            key = "container_${conn.id}",
+                            screenKey = Screen.MysqlConnsScreen.route,
                             elevation = 4.dp,
                             onClick = {
                                 navigateToEditScreen(conn)
                             },
-                            indication = rememberRipple(color = MaterialTheme.colors.primarySurface)
+                            indication = rememberRipple(color = MaterialTheme.colors.primarySurface),
+                            transitionSpec = MaterialContainerTransformSpec(
+                                    pathMotionFactory = MaterialArcMotionFactory,
+                                    durationMillis = 1000,
+                                    fadeMode = FadeMode.Cross
+                            ),
+                            zIndex = -1f
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth()
                                     .padding(6.dp, 4.dp, 4.dp, 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                SharedMaterialContainer(
+                                SharedElement(
                                     key = "img_${conn.id}",
                                     screenKey = Screen.MysqlConnsScreen.route,
-                                    shape = MaterialTheme.shapes.medium,
-                                    color = Color.Transparent,
-                                    transitionSpec = fadeOutTransitionSpec
+                                    transitionSpec = crossFadeTransitionSpec
                                 ) {
                                     LottieAnimation(
                                         modifier = Modifier.size(36.dp)

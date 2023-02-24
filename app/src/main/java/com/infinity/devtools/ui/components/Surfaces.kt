@@ -30,7 +30,6 @@ import kotlin.math.roundToInt
 /**
  * Custom application surface that supports ripple effect color changes
  *
- * @param onClick           Callback handler of click events. Will be called when user clicks on the element
  * @param modifier          Surface root element modifier
  * @param shape             Shape of the root element surface
  * @param color             Background color of the surface
@@ -42,6 +41,7 @@ import kotlin.math.roundToInt
  * indication from [LocalIndication] will be used. Pass `null` to show no indication, or
  * current value from [LocalIndication] to show theme default
  * @param enabled           Enables or disable surface click interations
+ * @param onClick           Callback handler of click events. Will be called when user clicks on the element
  * @param onClickLabel      Semantic / accessibility label for the [onClick] action
  * @param role              The type of user interface element. Accessibility services might use this
  * to describe the element or do customizations
@@ -49,7 +49,6 @@ import kotlin.math.roundToInt
  */
 @Composable
 fun AppSurface(
-    onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape = RectangleShape,
     color: Color = MaterialTheme.colors.surface,
@@ -59,6 +58,7 @@ fun AppSurface(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     indication: Indication? = LocalIndication.current,
     enabled: Boolean = true,
+    onClick: (() -> Unit)? = null,
     onClickLabel: String? = null,
     role: Role? = null,
     content: @Composable () -> Unit
@@ -82,14 +82,18 @@ fun AppSurface(
                     elevation = elevation
                 )
                 .then(
-                    Modifier.clickable(
-                        interactionSource = interactionSource,
-                        indication = indication,
-                        enabled = enabled,
-                        onClickLabel = onClickLabel,
-                        role = role,
-                        onClick = onClick
-                    )
+                    if (onClick != null) {
+                        Modifier.clickable(
+                            interactionSource = interactionSource,
+                            indication = indication,
+                            enabled = enabled,
+                            onClickLabel = onClickLabel,
+                            role = role,
+                            onClick = onClick
+                        )
+                    } else {
+                        Modifier
+                    }
                 ),
             propagateMinConstraints = true
         ) {

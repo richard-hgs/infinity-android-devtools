@@ -25,6 +25,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.airbnb.lottie.compose.*
 import com.infinity.devtools.R
@@ -60,13 +62,13 @@ fun EditMysqlConnScreen(
     }
 
     val fadeOutTransitionSpec = MaterialContainerTransformSpec(
-        durationMillis = 1000,
+        durationMillis = 500,
         fadeMode = FadeMode.Out
     )
     val crossFadeTransitionSpec = SharedElementsTransitionSpec(
-        durationMillis = 1000,
+        durationMillis = 500,
         fadeMode = FadeMode.Cross,
-        fadeProgressThresholds = ProgressThresholds(0.10f, 0.40f)
+        fadeProgressThresholds = ProgressThresholds(0f, 1f)
     )
 
     val lottieComp by rememberLottieComposition(
@@ -81,6 +83,7 @@ fun EditMysqlConnScreen(
     )
 
     Scaffold(
+        backgroundColor = Color.Transparent,
         topBar = {
             AppTopBar(
                 title = stringResource(R.string.title_new_mysql_conn),
@@ -91,191 +94,228 @@ fun EditMysqlConnScreen(
             )
         }
     ) { paddingVals ->
-        Column(
-            Modifier.padding(
+        ConstraintLayout(
+            modifier = Modifier.padding(
                 start = paddingVals.calculateStartPadding(LocalLayoutDirection.current) + 8.dp,
                 top = paddingVals.calculateTopPadding() + 8.dp,
                 end = paddingVals.calculateEndPadding(LocalLayoutDirection.current) + 8.dp,
                 bottom = paddingVals.calculateBottomPadding() + 8.dp
             ).fillMaxSize()
         ) {
-            ColumnScrollbar(
-                modifier = Modifier.fillMaxWidth()
-                    .weight(1f),
-                state = scrollState
-            ) { modifier ->
-                Column(
-                    modifier = modifier.fillMaxWidth()
-                        .verticalScroll(scrollState),
-                    horizontalAlignment = Alignment.CenterHorizontally
+            val (ref1, ref2) = createRefs()
+            Column(
+                modifier = Modifier.constrainAs(ref1) {
+                    start.linkTo(parent.start)
+                    top.linkTo(parent.top)
+                    end.linkTo(parent.end)
+                    bottom.linkTo(parent.bottom)
+                    height = Dimension.fillToConstraints
+                    width = Dimension.fillToConstraints
+                }
+            ) {
+                SharedMaterialContainer(
+                    key = "container_${conn?.id}",
+                    screenKey = Screen.NewMysqlConnScreen.route,
+                    elevation = 0.dp,
+                    transitionSpec = MaterialContainerTransformSpec(
+                        pathMotionFactory = MaterialArcMotionFactory,
+                        durationMillis = 500,
+                        fadeMode = FadeMode.Cross
+                    ),
+                    zIndex = -1f
                 ) {
-                    SharedMaterialContainer(
-                        key = "img_${conn?.id}",
-                        screenKey = Screen.NewMysqlConnScreen.route,
-                        shape = MaterialTheme.shapes.medium,
-                        color = Color.Transparent,
-                        transitionSpec = fadeOutTransitionSpec
-                    ) {
-                        LottieAnimation(
-                            modifier = Modifier.size(150.dp)
-                                .clickable {
-                                    navigateBack()
-                                }
-                                .scale(1.49f),
-                            composition = lottieComp,
-                            progress = { lottieProgress }
-                        )
-                    }
-                    AppTextField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .focusRequester(focusRequester),
-                        text = viewModel.mysqlConn.name,
-                        placeholder = stringResource(R.string.conn_name),
-                        onChange = { str ->
-                            viewModel.updateName(str)
-                        },
-                        imeAction = ImeAction.Next, // Show next as IME button
-                        keyboardType = KeyboardType.Text, // Plain text keyboard
-                        keyBoardActions = KeyboardActions(
-                            onNext = {
-                                focusManager.moveFocus(FocusDirection.Down)
-                            }
-                        ),
-                        maxLength = 50,
-                        sharedElTransitionKey = "name_${conn?.id}",
-                        sharedElTransitionScreenKey = Screen.NewMysqlConnScreen.route,
-                        sharedElTransitionSpec = crossFadeTransitionSpec,
-                        sharedElTransitionEnd = !scope.isRunningTransition
-                    )
-                    AppTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = viewModel.mysqlConn.host,
-                        placeholder = stringResource(R.string.conn_host),
-                        onChange = {
-                            viewModel.updateHost(it)
-                        },
-                        imeAction = ImeAction.Next, // Show next as IME button
-                        keyboardType = KeyboardType.Text, // Plain text keyboard
-                        keyBoardActions = KeyboardActions(
-                            onNext = {
-                                focusManager.moveFocus(FocusDirection.Down)
-                            }
-                        ),
-                        maxLength = 255,
-                        sharedElTransitionKey = "host_${conn?.id}",
-                        sharedElTransitionScreenKey = Screen.NewMysqlConnScreen.route,
-                        sharedElTransitionSpec = crossFadeTransitionSpec,
-                        sharedElTransitionEnd = !scope.isRunningTransition
-                    )
-                    AppTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = if (viewModel.mysqlConn.port != -1) viewModel.mysqlConn.port.toString() else "",
-                        placeholder = stringResource(R.string.conn_port),
-                        onChange = {
-                            viewModel.updatePort(it)
-                        },
-                        imeAction = ImeAction.Next, // Show next as IME button
-                        keyboardType = KeyboardType.Text, // Plain text keyboard
-                        keyBoardActions = KeyboardActions(
-                            onNext = {
-                                focusManager.moveFocus(FocusDirection.Down)
-                            }
-                        ),
-                        maxLength = 5,
-                        sharedElTransitionKey = "port_${conn?.id}",
-                        sharedElTransitionScreenKey = Screen.NewMysqlConnScreen.route,
-                        sharedElTransitionSpec = crossFadeTransitionSpec,
-                        sharedElTransitionEnd = !scope.isRunningTransition
-                    )
-                    AppTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = viewModel.mysqlConn.user,
-                        placeholder = stringResource(R.string.conn_user),
-                        onChange = {
-                            viewModel.updateUser(it)
-                        },
-                        imeAction = ImeAction.Next, // Show next as IME button
-                        keyboardType = KeyboardType.Text, // Plain text keyboard
-                        keyBoardActions = KeyboardActions(
-                            onNext = {
-                                focusManager.moveFocus(FocusDirection.Down)
-                            }
-                        ),
-                        maxLength = 255
-                    )
-                    AppTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = viewModel.mysqlConn.pass,
-                        placeholder = stringResource(R.string.conn_pass),
-                        onChange = {
-                            viewModel.updatePass(it)
-                        },
-                        imeAction = ImeAction.Next, // Show next as IME button
-                        keyboardType = KeyboardType.Password, // Plain text keyboard
-                        keyBoardActions = KeyboardActions(
-                            onNext = {
-                                focusManager.moveFocus(FocusDirection.Down)
-                            }
-                        ),
-                        maxLength = 255
-                    )
-                    AppTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = viewModel.mysqlConn.dbname,
-                        placeholder = stringResource(R.string.conn_dbname),
-                        onChange = {
-                            viewModel.updateDbName(it)
-                        },
-                        imeAction = ImeAction.Done, // Show next as IME button
-                        keyboardType = KeyboardType.Text, // Plain text keyboard
-                        keyBoardActions = KeyboardActions(
-                            onDone = {
-                                focusManager.clearFocus()
-                            }
-                        ),
-                        maxLength = 255
-                    )
+                    Column(
+                        modifier = Modifier.fillMaxSize()
+                    ) {}
                 }
             }
-            Spacer(Modifier.height(8.dp))
-            ProgressButton(
-                type = SSButtonType.CIRCLE,
-                onClick = {
-                    coroutineScope.launch {
-                        // Perform action on click of button and make it's state to LOADING
-                        submitButtonState = SSButtonState.LOADING
 
-                        val job: Job = if (viewModel.mysqlConn.id == 0) {
-                            // Insert this new connection
-                            viewModel.addConn(conn = viewModel.mysqlConn)
-                        } else {
-                            // Update connection
-                            viewModel.updateConn(conn = viewModel.mysqlConn)
+            Column(
+                modifier = Modifier.constrainAs(ref2) {
+                    start.linkTo(parent.start)
+                    top.linkTo(parent.top)
+                    end.linkTo(parent.end)
+                    bottom.linkTo(parent.bottom)
+                    height = Dimension.fillToConstraints
+                    width = Dimension.fillToConstraints
+                }
+            ) {
+                ColumnScrollbar(
+                    modifier = Modifier.fillMaxWidth()
+                        .weight(1f),
+                    state = scrollState
+                ) { modifier ->
+                    Column(
+                        modifier = modifier.fillMaxWidth()
+                            .verticalScroll(scrollState),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        SharedElement(
+                            key = "img_${conn?.id}",
+                            screenKey = Screen.NewMysqlConnScreen.route,
+                            transitionSpec = crossFadeTransitionSpec
+                        ) {
+                            LottieAnimation(
+                                modifier = Modifier.size(150.dp)
+                                    .clickable {
+                                        navigateBack()
+                                    }
+                                    .scale(1.49f),
+                                composition = lottieComp,
+                                progress = { lottieProgress }
+                            )
                         }
-                        // Suspend parent coroutine until job is done
-                        job.join()
-
-                        // Wait some progress
-                        delay(1000)
-
-                        // Notify job result
-                        val errDialogOpen = viewModel.errDialogOpen.value
-                        submitButtonState =
-                            if (errDialogOpen) SSButtonState.FAILURE else SSButtonState.SUCCESS
-                        // Wait for job progress show
-                        delay(1000)
-                        if (!errDialogOpen) {
-                            // Navigate back
-                            navigateBack()
-                        }
+                        AppTextField(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequester),
+                            text = viewModel.mysqlConn.name,
+                            placeholder = stringResource(R.string.conn_name),
+                            onChange = { str ->
+                                viewModel.updateName(str)
+                            },
+                            imeAction = ImeAction.Next, // Show next as IME button
+                            keyboardType = KeyboardType.Text, // Plain text keyboard
+                            keyBoardActions = KeyboardActions(
+                                onNext = {
+                                    focusManager.moveFocus(FocusDirection.Down)
+                                }
+                            ),
+                            maxLength = 50,
+                            sharedElTransitionKey = "name_${conn?.id}",
+                            sharedElTransitionScreenKey = Screen.NewMysqlConnScreen.route,
+                            sharedElTransitionSpec = crossFadeTransitionSpec,
+                            sharedElTransitionEnd = !scope.isRunningTransition
+                        )
+                        AppTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = viewModel.mysqlConn.host,
+                            placeholder = stringResource(R.string.conn_host),
+                            onChange = {
+                                viewModel.updateHost(it)
+                            },
+                            imeAction = ImeAction.Next, // Show next as IME button
+                            keyboardType = KeyboardType.Text, // Plain text keyboard
+                            keyBoardActions = KeyboardActions(
+                                onNext = {
+                                    focusManager.moveFocus(FocusDirection.Down)
+                                }
+                            ),
+                            maxLength = 255,
+                            sharedElTransitionKey = "host_${conn?.id}",
+                            sharedElTransitionScreenKey = Screen.NewMysqlConnScreen.route,
+                            sharedElTransitionSpec = crossFadeTransitionSpec,
+                            sharedElTransitionEnd = !scope.isRunningTransition
+                        )
+                        AppTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = if (viewModel.mysqlConn.port != -1) viewModel.mysqlConn.port.toString() else "",
+                            placeholder = stringResource(R.string.conn_port),
+                            onChange = {
+                                viewModel.updatePort(it)
+                            },
+                            imeAction = ImeAction.Next, // Show next as IME button
+                            keyboardType = KeyboardType.Text, // Plain text keyboard
+                            keyBoardActions = KeyboardActions(
+                                onNext = {
+                                    focusManager.moveFocus(FocusDirection.Down)
+                                }
+                            ),
+                            maxLength = 5,
+                            sharedElTransitionKey = "port_${conn?.id}",
+                            sharedElTransitionScreenKey = Screen.NewMysqlConnScreen.route,
+                            sharedElTransitionSpec = crossFadeTransitionSpec,
+                            sharedElTransitionEnd = !scope.isRunningTransition
+                        )
+                        AppTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = viewModel.mysqlConn.user,
+                            placeholder = stringResource(R.string.conn_user),
+                            onChange = {
+                                viewModel.updateUser(it)
+                            },
+                            imeAction = ImeAction.Next, // Show next as IME button
+                            keyboardType = KeyboardType.Text, // Plain text keyboard
+                            keyBoardActions = KeyboardActions(
+                                onNext = {
+                                    focusManager.moveFocus(FocusDirection.Down)
+                                }
+                            ),
+                            maxLength = 255
+                        )
+                        AppTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = viewModel.mysqlConn.pass,
+                            placeholder = stringResource(R.string.conn_pass),
+                            onChange = {
+                                viewModel.updatePass(it)
+                            },
+                            imeAction = ImeAction.Next, // Show next as IME button
+                            keyboardType = KeyboardType.Password, // Plain text keyboard
+                            keyBoardActions = KeyboardActions(
+                                onNext = {
+                                    focusManager.moveFocus(FocusDirection.Down)
+                                }
+                            ),
+                            maxLength = 255
+                        )
+                        AppTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = viewModel.mysqlConn.dbname,
+                            placeholder = stringResource(R.string.conn_dbname),
+                            onChange = {
+                                viewModel.updateDbName(it)
+                            },
+                            imeAction = ImeAction.Done, // Show next as IME button
+                            keyboardType = KeyboardType.Text, // Plain text keyboard
+                            keyBoardActions = KeyboardActions(
+                                onDone = {
+                                    focusManager.clearFocus()
+                                }
+                            ),
+                            maxLength = 255
+                        )
                     }
-                },
-                assetColor = Color.White,
-                buttonState = submitButtonState,
-                setButtonState = { submitButtonState = it },
-                text = stringResource(R.string.save_conn),
-            )
+                }
+                Spacer(Modifier.height(8.dp))
+                ProgressButton(
+                    type = SSButtonType.CIRCLE,
+                    onClick = {
+                        coroutineScope.launch {
+                            // Perform action on click of button and make it's state to LOADING
+                            submitButtonState = SSButtonState.LOADING
+
+                            val job: Job = if (viewModel.mysqlConn.id == 0) {
+                                // Insert this new connection
+                                viewModel.addConn(conn = viewModel.mysqlConn)
+                            } else {
+                                // Update connection
+                                viewModel.updateConn(conn = viewModel.mysqlConn)
+                            }
+                            // Suspend parent coroutine until job is done
+                            job.join()
+
+                            // Wait some progress
+                            delay(1000)
+
+                            // Notify job result
+                            val errDialogOpen = viewModel.errDialogOpen.value
+                            submitButtonState =
+                                if (errDialogOpen) SSButtonState.FAILURE else SSButtonState.SUCCESS
+                            // Wait for job progress show
+                            delay(1000)
+                            if (!errDialogOpen) {
+                                // Navigate back
+                                navigateBack()
+                            }
+                        }
+                    },
+                    assetColor = Color.White,
+                    buttonState = submitButtonState,
+                    setButtonState = { submitButtonState = it },
+                    text = stringResource(R.string.save_conn),
+                )
+            }
         }
     }
 }

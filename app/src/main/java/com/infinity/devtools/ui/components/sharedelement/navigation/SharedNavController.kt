@@ -109,6 +109,7 @@ class SharedNavController {
      */
     private fun prepareTransition(animatedKeys : Array<Any>) {
         if (scope != null) {
+            Log.d("TAG", "prepare transition")
             scope!!.prepareTransition(*animatedKeys)
         }
     }

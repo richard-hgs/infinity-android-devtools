@@ -4,6 +4,7 @@ import androidx.compose.animation.core.AnimationConstants
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Indication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,6 +26,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.util.lerp
 import androidx.compose.ui.zIndex
+import com.infinity.devtools.ui.components.AppSurface
 import kotlin.math.roundToInt
 
 @Composable
@@ -40,6 +42,9 @@ fun SharedMaterialContainer(
     transitionSpec: MaterialContainerTransformSpec = DefaultMaterialContainerTransformSpec,
     onFractionChanged: ((Float) -> Unit)? = null,
     placeholder: @Composable (() -> Unit)? = null,
+    onClick: (() -> Unit)? = null,
+    indication: Indication? = null,
+    zIndex: Float = 0f,
     content: @Composable () -> Unit
 ) {
     val elementInfo = MaterialContainerInfo(
@@ -51,23 +56,25 @@ fun SharedMaterialContainer(
         elementInfo,
         isFullscreen,
         realPlaceholder,
-        { Placeholder(it) },
+        { Placeholder(it, zIndex) },
         {
-            Surface(
+            AppSurface(
                 modifier = it,
                 shape = shape,
                 color = color,
                 contentColor = contentColor,
                 border = border,
                 elevation = elevation,
-                content = content
+                content = content,
+                onClick = onClick,
+                indication = indication
             )
         }
     )
 }
 
 @Composable
-private fun Placeholder(state: SharedElementsTransitionState) {
+private fun Placeholder(state: SharedElementsTransitionState, zIndex: Float = 0f) {
     with(LocalDensity.current) {
         val startInfo = state.startInfo as MaterialContainerInfo
         val direction = state.direction
@@ -131,11 +138,20 @@ private fun Placeholder(state: SharedElementsTransitionState) {
                     containerHeight.toDp()
                 )
                 .offset { offset }
+                .zIndex(zIndex)
+
+//            if (state.startInfo.key == "container_6") {
+//                surfaceModifier = surfaceModifier.then(Modifier.zIndex(-1f))
+//            }
+
+//            Log.d("TAG", "startKey: ${state.startInfo.key}(${state.startInfo.screenKey}) - endKey: ${state.endInfo?.key}(${state.endInfo?.screenKey}) offset$offset} - size: $containerWidth, $containerHeight")
 
             val endInfo = state.endInfo as? MaterialContainerInfo
             val fadeFraction = thresholds.fade.applyTo(fraction)
             if (end != null && endInfo != null) {
                 val endAlpha = calculateAlpha(direction, state.spec?.fadeMode, fadeFraction, false)
+
+//                Log.d("TAG", "endAlpha: ${endAlpha}")
                 if (endAlpha > 0) {
                     val endScale = calculateScale(end, start, 1 - scaleFraction).run {
                         if (fitMode == FitMode.Height) scaleY else scaleX
@@ -194,6 +210,7 @@ private fun Placeholder(state: SharedElementsTransitionState) {
             }
 
             startAlpha = calculateAlpha(direction, state.spec?.fadeMode, fadeFraction, true)
+
             if (startAlpha > 0) {
                 startContentModifier = Modifier
                     .size(

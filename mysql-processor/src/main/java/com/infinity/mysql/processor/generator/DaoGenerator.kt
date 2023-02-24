@@ -5,6 +5,7 @@ import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeAlias
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.infinity.mysql.annotation.ColumnInfo
 import com.infinity.mysql.annotation.Query
@@ -76,11 +77,27 @@ class DaoGenerator(
                         val funcName = ksFunc.simpleName.asString()
                         val funcRetResolved = ksFunc.returnType!!.resolve()
                         val funcRetType = funcRetResolved.toTypeName()
-                        val funcRetClass = funcRetResolved.declaration as KSClassDeclaration
-                        val funcRetTypeParam = funcRetResolved.arguments.firstOrNull()?.type
+                        val funcRetClass : KSClassDeclaration
+                        val funcRetTypeParam : KSTypeReference?
                         val funcParams = ksFunc.parameters
                         var funcCode = ""
                         var funcCodeParams = emptyArray<Any>()
+
+                        if (funcRetResolved.declaration is KSTypeAlias) {
+                            // Function return type is a TypeAlias
+                            funcRetClass = (funcRetResolved.declaration as KSTypeAlias).type.resolve().declaration as KSClassDeclaration
+                            funcRetTypeParam = (funcRetResolved.declaration as KSTypeAlias).type.resolve().arguments.firstOrNull()?.type
+
+                            // Since type alias argument is not imported automatically, import the List type parameter
+                            if (funcRetTypeParam != null) {
+                                val funcRetTypeParamClassName = funcRetTypeParam.resolve().toClassName()
+                                addImport(funcRetTypeParamClassName.packageName, funcRetTypeParamClassName.simpleName)
+                            }
+                        } else {
+                            // Function return type is not a TypeAlias
+                            funcRetClass = funcRetResolved.declaration as KSClassDeclaration
+                            funcRetTypeParam = funcRetResolved.arguments.firstOrNull()?.type
+                        }
 
                         logger.warn("funcRetType is a ${funcRetClass.simpleName.asString()}<${funcRetTypeParam.toString()}>")
 

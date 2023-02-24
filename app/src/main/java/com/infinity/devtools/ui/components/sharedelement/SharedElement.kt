@@ -1,5 +1,6 @@
 package com.infinity.devtools.ui.components.sharedelement
 
+import android.util.Log
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -53,6 +54,10 @@ private fun Placeholder(state: SharedElementsTransitionState) {
             fraction, state.pathMotion,
             startBounds.width * startScale.scaleX
         ).round()
+
+        if (state.startInfo.key == "img_6") {
+            Log.d("TAG", "key: ${state.startInfo.key} offset: ${offset}")
+        }
 
         @Composable
         fun Container(

@@ -7,6 +7,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -16,6 +17,7 @@ import com.infinity.devtools.R
 /**
  * Default AppBarTop to be used in Scaffold
  *
+ * @param modifier              Modifier attributes
  * @param title                 Title of the appbar or AppTitle if not provided
  * @param homeIcon              Home icon or null
  * @param onHomeClick           Callback that handles home icon click
@@ -23,12 +25,14 @@ import com.infinity.devtools.R
  */
 @Composable
 fun AppTopBar(
+    modifier : Modifier = Modifier,
     title: String = stringResource(R.string.app_name),
     homeIcon: ImageVector? = null,
     onHomeClick: (() -> Unit)? = null,
     onOptionsItemClick: ((menuItemId: Int) -> Unit)? = null
 ) {
     TopAppBar(
+        modifier = modifier,
         title = {
             Text(text = title)
         },

@@ -1,5 +1,6 @@
 package com.infinity.devtools.ui.components.sharedelement
 
+import android.util.Log
 import android.view.Choreographer
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -33,6 +34,7 @@ internal fun BaseSharedElement(
     val shouldHide = rootState.onElementRegistered(elementInfo)
     setShouldHide(shouldHide)
 
+    Log.d("TAG", "should hide: ${elementInfo.key} - ${shouldHide} - ${savedShouldHide}")
     val compositionLocalValues = compositionLocalValues
     if (isFullscreen) {
         rootState.onElementPositioned(

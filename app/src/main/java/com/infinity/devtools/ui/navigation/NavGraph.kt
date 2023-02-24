@@ -105,7 +105,7 @@ fun NavGraph(
                             sharedNavController.navigate(
                                 Screen.NewMysqlConnScreen.route,
                                 arguments,
-                                "img_${it?.id}", "name_${it?.id}", "host_${it?.id}", "port_${it?.id}"
+                                "img_${it?.id}", "name_${it?.id}", "host_${it?.id}", "port_${it?.id}", "container_${it?.id}"
                             )
                         },
                         navigateToNewScreen = { sharedNavController.navigate(Screen.NewMysqlConnScreen.route) }
