@@ -15,6 +15,7 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
@@ -30,6 +31,8 @@ import kotlin.math.min
 @OptIn(ExperimentalMaterialApi::class)
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    var someVar : Boolean = false
 
     @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,16 +51,18 @@ class MainActivity : ComponentActivity() {
     // ============== CREATING IMPLEMENTATION OF THE SHARED ELEMENTS TRANSITION =================
     @Composable
     fun RootScreen() {
-        var screenName by remember { mutableStateOf("Screen1") }
+        var currentScreen by remember { mutableStateOf("Screen1") }
 
-        SharedElRoot {
-            if (screenName == "Screen1") {
+        SharedElRoot(
+            screenKey = currentScreen
+        ) {
+            if (currentScreen == "Screen1") {
                 Screen1 {
-                    screenName = "Screen2"
+                    currentScreen = "Screen2"
                 }
             } else {
                 Screen2 {
-                    screenName = "Screen1"
+                    currentScreen = "Screen1"
                 }
             }
         }
@@ -82,6 +87,8 @@ class MainActivity : ComponentActivity() {
     fun Screen2(
         navigateScreen1: () -> Unit
     ) {
+        var contentText by remember { mutableStateOf("Some Text") }
+
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -96,6 +103,11 @@ class MainActivity : ComponentActivity() {
                     text = "Screen 2"
                 )
             }
+
+            Text(
+                modifier = Modifier.clickable { contentText = "Some new Text" },
+                text = contentText
+            )
         }
     }
 
@@ -105,24 +117,116 @@ class MainActivity : ComponentActivity() {
 // ================== SHARED EL ROOT ===================
 @Composable
 fun SharedElRoot(
+    screenKey: String,
     content: @Composable () -> Unit
 ) {
     val rootState = remember { SharedElRootState() }
+
+    if (rootState.getCurrentScreenKey() == null) {
+        // Initialize for the first time the initial screen key
+        rootState.setCurrentScreenKey(screenKey)
+    }
 
     CompositionLocalProvider(
         LocalSharedElsRootState provides rootState
     ) {
         content()
     }
-
-    Log.d("TAG", "root composed: ${rootState}")
 }
 
-private class SharedElRootState() {
+@Composable
+fun SharedEl(
+    key: String,
+    screenKey: String,
+    content: @Composable () -> Unit
+) {
+    // State of the SharedElRoot composable
+    val rootState = LocalSharedElsRootState.current
+
+    var isStartEl by remember { mutableStateOf(false) }
+
+    // val offset = remember { Animatable(Offset(0f, 0f), Offset.VectorConverter) }
+
+    // Element info that will be animated
+    var sharedElInfo = rootState.getSharedElement(id = SharedElId(key, screenKey))
+
+    // Log.d("TAG", "before($key - $screenKey): ${sharedElInfo}")
+
+    if (sharedElInfo == null) {
+        // Add shared element for the first time only
+        sharedElInfo = SharedElInfo(
+            key = key,
+            screenKey = screenKey,
+            isAnimationRunning = false
+        )
+    }
+
+    // Register a observer that listen when a startElement bounds are set and endElement is present and its bounds is set to begin the transition
+    rootState.setSharedElementObserver(sharedElInfo.id, object : SharedElObserver {
+        override fun changed(mIsStartEl: Boolean, mElInfo: SharedElInfo) {
+            isStartEl = mIsStartEl
+            Log.d("TAG", "($key - $screenKey) isStartEl: $mIsStartEl, changed: $mElInfo")
+        }
+    })
+
+    // Log.d("TAG", "composed($key - $screenKey): ${sharedElInfo}")
+
+    // Register the current element that will be used to create the transition
+    rootState.registerSharedElement(sharedElInfo)
+
+    val modifier = Modifier.onGloballyPositioned { coordinates ->
+        // Update the current element bounds
+        val mSharedElInfo = rootState.getSharedElement(id = sharedElInfo.id)
+
+        // Log.d("TAG", "onGloballyPositioned($key - $screenKey): ${mSharedElInfo}")
+
+        if (mSharedElInfo != null) {
+            rootState.registerSharedElement(mSharedElInfo.copy(boundsInRoot = coordinates.positionInRoot()))
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            // Update the current element as disposed
+            val mSharedElInfo = rootState.getSharedElement(id = sharedElInfo.id)
+            // Log.d("TAG", "onDispose($key - $screenKey): ${mSharedElInfo}")
+            if (mSharedElInfo != null) {
+                rootState.registerSharedElement(mSharedElInfo.copy(isDisposed = true))
+            }
+        }
+    }
+
+    // Content wrapped by this composable SharedEl
+    Layout(content, modifier) { measurables, constraints ->
+        if (measurables.size > 1) {
+            throw IllegalStateException("SharedElement can have only one direct measurable child!")
+        }
+
+        val placeable = measurables.firstOrNull()?.measure(
+            Constraints(
+                minWidth = 0,
+                minHeight = 0,
+                maxWidth = constraints.maxWidth,
+                maxHeight = constraints.maxHeight
+            )
+        )
+
+        val width = min(max(constraints.minWidth, placeable?.width ?: 0), constraints.maxWidth)
+        val height = min(max(constraints.minHeight, placeable?.height ?: 0), constraints.maxHeight)
+
+        layout(width, height) {
+            placeable?.place(0, 0)
+        }
+    }
+}
+
+private class SharedElRootState {
     private val sharedElements = mutableListOf<SharedElInfo>()
     private var startScreenKey : String? = null
     private var endScreenKey : String? = null
+    private var currentScreenKey : String? = null
     private val sharedElementsObservers = mutableMapOf<SharedElId, SharedElObserver>()
+    private var screenChangeObserver : ((screen: String) -> Unit)? = null
 
     /**
      * Register all information of a shared element.
@@ -134,6 +238,7 @@ private class SharedElRootState() {
     fun registerSharedElement(sharedElInfo : SharedElInfo) {
         // NotNull=Shared element is already registered, Null=New shared element being registered
         var elExists : SharedElInfo? = null
+        var elExistsPos = 0
         // Null=Shared element start, NotNull=Parent of the Shared element end
         var startEl : SharedElInfo? = null
         var startElPos = 0
@@ -141,6 +246,7 @@ private class SharedElRootState() {
             if (sharedElInfo.key == it.key && sharedElInfo.screenKey == it.screenKey) {
                 // Element is already registered
                 elExists = it
+                elExistsPos = index
             }
             if (sharedElInfo.key == it.key && sharedElInfo.screenKey != it.screenKey) {
                 // Start element of the current end element found
@@ -148,10 +254,6 @@ private class SharedElRootState() {
                 startElPos = index
             }
         }
-//        if (elExists) {
-//            // Shared element is already registered
-//            throw IllegalArgumentException("SharedEl key(${sharedElInfo.key}) and screen key(${sharedElInfo.screenKey}) already exists.")
-//        }
 
         if (startEl == null) {
             // No start element found, register current element as the start element
@@ -160,6 +262,15 @@ private class SharedElRootState() {
                 sharedElements.add(sharedElInfo)
                 // Notify observer
                 notifyObserver(sharedElInfo.id, sharedElInfo)
+            } else {
+                // Start element already exists update it's information
+                sharedElements[elExistsPos] = sharedElInfo
+                // Notify start observer
+                notifyObserver(sharedElInfo.id, sharedElInfo)
+                if (sharedElInfo.endElement != null) {
+                    // Notify end observer
+                    notifyObserver(sharedElInfo.endElement!!.id, sharedElInfo.endElement!!)
+                }
             }
         } else {
             // Start element found, register current element inside the start element as a end element
@@ -184,19 +295,19 @@ private class SharedElRootState() {
         }
     }
 
-    /**
-     * Unregister the start or end shared element information
-     *
-     * @param sharedElInfo  Shared element info. Can be a start or a end element information.
-     */
-    fun unregisterSharedElement(sharedElInfo : SharedElInfo) {
-        for (i in sharedElements.indices) {
-            if (sharedElements[i].key == sharedElInfo.key && sharedElements[i].screenKey == sharedElInfo.screenKey) {
-                sharedElements.removeAt(i)
-                break
-            }
-        }
-    }
+//    /**
+//     * Unregister the start or end shared element information
+//     *
+//     * @param sharedElInfo  Shared element info. Can be a start or a end element information.
+//     */
+//    fun unregisterSharedElement(sharedElInfo : SharedElInfo) {
+//        for (i in sharedElements.indices) {
+//            if (sharedElements[i].key == sharedElInfo.key && sharedElements[i].screenKey == sharedElInfo.screenKey) {
+//                sharedElements.removeAt(i)
+//                break
+//            }
+//        }
+//    }
 
     /**
      * Set or unset a shared element observer
@@ -214,6 +325,61 @@ private class SharedElRootState() {
             sharedElementsObservers.remove(id)
         }
     }
+
+//    /**
+//     * Used to set a single observer to the shared elements transition screen state.
+//     *
+//     * @param observer  Screen change observer
+//     */
+//    fun setScreenChangeObserver(observer: (screen: String) -> Unit) {
+//        screenChangeObserver = observer
+//    }
+
+    /**
+     * Set current screen key
+     *
+     * @param screenKey     Current screen key
+     */
+    fun setCurrentScreenKey(screenKey: String) {
+        this.currentScreenKey = screenKey
+    }
+
+    /**
+     * Get current screen key
+     */
+    fun getCurrentScreenKey() = currentScreenKey
+
+    /**
+     * Search for a shared element information using it's identifier [id]
+     *
+     * @param id    Identifier of the shared element information
+     * @return      Element information or NULL if not found
+     */
+    fun getSharedElement(id: SharedElId) : SharedElInfo? {
+        for(i in sharedElements.indices) {
+            val sharedElAt = sharedElements[i]
+            if (sharedElAt.id == id) {
+                // Check if element being searched is the start element
+                return sharedElAt
+            } else if (sharedElAt.endElement != null && sharedElAt.endElement!!.id == id) {
+                // If not start element, checks if it's the end element
+                return sharedElAt.endElement!!
+            }
+        }
+        // Element not found return null
+        return null
+    }
+
+//    /**
+//     * Get all shared elements for a given screen key
+//     *
+//     * @param screenKey Screen key
+//     */
+//    fun getSharedElements(screenKey: String) : List<SharedElInfo> {
+//        return sharedElements.filter {
+//            it.screenKey == screenKey
+//        }
+//    }
 
     /**
      * Checks if at least one shared element is in transition, since each shared element can have it's own transition
@@ -246,63 +412,6 @@ private class SharedElRootState() {
 private val LocalSharedElsRootState = staticCompositionLocalOf<SharedElRootState> {
     error("SharedElementsRoot not found. SharedElement must be hosted in SharedElementsRoot.")
 }
-// ================== SHARED EL ROOT ===================
-
-// ==================== SHARED EL ======================
-@Composable
-fun SharedEl(
-    key: String,
-    screenKey: String,
-    content: @Composable () -> Unit
-) {
-    // State of the SharedElRoot composable
-    val rootState = LocalSharedElsRootState.current
-
-    // Element info that will be animated
-    val sharedElInfo = SharedElInfo(
-        key = key,
-        screenKey = screenKey,
-        isAnimationRunning = false
-    )
-
-    // Register the current element that will be used to create the transition
-    rootState.registerSharedElement(sharedElInfo)
-
-    // Register a observer that listen when a endElement is present to begin the transition
-    rootState.setSharedElementObserver(sharedElInfo.id, object : SharedElObserver {
-        override fun changed(isStartEl: Boolean, elInfo: SharedElInfo) {
-            Log.d("TAG", "isStartEl: $isStartEl, changed: $elInfo")
-        }
-    })
-
-    val modifier = Modifier.onGloballyPositioned { coordinates ->
-        Log.d("TAG", "${coordinates.size} ${coordinates.positionInRoot()}")
-    }
-
-    // Content wrapped by this composable SharedEl
-    Layout(content, modifier) { measurables, constraints ->
-        if (measurables.size > 1) {
-            throw IllegalStateException("SharedElement can have only one direct measurable child!")
-        }
-
-        val placeable = measurables.firstOrNull()?.measure(
-            Constraints(
-                minWidth = 0,
-                minHeight = 0,
-                maxWidth = constraints.maxWidth,
-                maxHeight = constraints.maxHeight
-            )
-        )
-
-        val width = min(max(constraints.minWidth, placeable?.width ?: 0), constraints.maxWidth)
-        val height = min(max(constraints.minHeight, placeable?.height ?: 0), constraints.maxHeight)
-
-        layout(width, height) {
-            placeable?.place(0, 0)
-        }
-    }
-}
-// ==================== SHARED EL ======================
 
 // ====================== MODELS =======================
 /**
@@ -312,18 +421,23 @@ fun SharedEl(
  * @property screenKey              Screen key that identifies the shared element start or end transitions
  * @property isAnimationRunning     True=Element is in transition to start/end element state, False=No transition running
  * @property endElement             NotNull=End transition element of the start element, Null=No end element registered or found
+ * @property boundsInRoot           Shared element bounds relative to root element
+ * @property isDisposed             Track if the screen of this element is open or closed
  * @property id                     Shared element information id, used in observer
  * Changes when a new screen is composed with shared elements on it.
  */
-private class SharedElInfo(
+private data class SharedElInfo(
     val key: String,
     val screenKey: String,
     var isAnimationRunning : Boolean,
     var endElement : SharedElInfo? = null,
-    val id : SharedElId = SharedElId(key, screenKey)
+    var boundsInRoot : Offset? = null,
+    var isDisposed: Boolean = false,
+    val id : SharedElId = SharedElId(key, screenKey),
 ) {
+
     override fun toString(): String {
-        return "SharedElInfo(key='$key', screenKey='$screenKey', isAnimationRunning=$isAnimationRunning, endElement=$endElement, id=$id)"
+        return "SharedElInfo(key='$key', screenKey='$screenKey', isAnimationRunning=$isAnimationRunning, endElement=$endElement, boundsInRoot=$boundsInRoot, isDisposed=$isDisposed, id=$id)"
     }
 }
 
@@ -333,6 +447,17 @@ private class SharedElId(
 ) {
     override fun toString(): String {
         return "SharedElId(key='$key', screenKey='$screenKey')"
+    }
+
+    /**
+     * Overriding equals allow us to compare [SharedElId] == [SharedElId] with different hash codes,
+     * but with same attributes.
+     */
+    override fun equals(other: Any?): Boolean {
+        other as SharedElId
+        if (key != other.key) return false
+        if (screenKey != other.screenKey) return false
+        return true
     }
 }
 
@@ -346,10 +471,10 @@ private interface SharedElObserver {
      * - A end shared element is registered for a start shared element;
      * - The transition state, running and not running changes;
      *
-     * @param isStartEl  True the shared element is the transition start
-     * @param elInfo     The shared element information
+     * @param mIsStartEl True the shared element is the transition start
+     * @param mElInfo    The shared element information
      */
-    fun changed(isStartEl : Boolean, elInfo : SharedElInfo) : Unit
+    fun changed(mIsStartEl : Boolean, mElInfo : SharedElInfo)
 }
 // ====================== MODELS =======================
 
