@@ -121,11 +121,31 @@ fun SharedElRoot(
     content: @Composable () -> Unit
 ) {
     val rootState = remember { SharedElRootState() }
+    var previousScreenKey: String? by remember { mutableStateOf(null) }
 
     if (rootState.getCurrentScreenKey() == null) {
         // Initialize for the first time the initial screen key
         rootState.setCurrentScreenKey(screenKey)
+        // Initialize for the first time the previous screen key to the initial screen key
+        previousScreenKey = screenKey
     }
+
+    // Detect screen changed
+    LaunchedEffect(screenKey) {
+        if (screenKey != previousScreenKey) {
+            rootState.transitionRunning = true
+        }
+    }
+
+    // Detect transition end
+    LaunchedEffect(rootState.transitionRunning) {
+        if (!rootState.transitionRunning) {
+            // Transition is not running, assign previous screen to current screen key
+            previousScreenKey = screenKey
+        }
+    }
+
+    Log.d("TAG", "SharedElRoot: $previousScreenKey - $screenKey - ${rootState.transitionRunning}")
 
     CompositionLocalProvider(
         LocalSharedElsRootState provides rootState
@@ -144,8 +164,6 @@ fun SharedEl(
     val rootState = LocalSharedElsRootState.current
 
     var isStartEl by remember { mutableStateOf(false) }
-
-    // val offset = remember { Animatable(Offset(0f, 0f), Offset.VectorConverter) }
 
     // Element info that will be animated
     var sharedElInfo = rootState.getSharedElement(id = SharedElId(key, screenKey))
@@ -220,13 +238,22 @@ fun SharedEl(
     }
 }
 
+@Composable
+fun SharedElTransition(
+    content: @Composable () -> Unit
+) {
+    // val offset = remember { Animatable(Offset(0f, 0f), Offset.VectorConverter) }
+}
+
 private class SharedElRootState {
     private val sharedElements = mutableListOf<SharedElInfo>()
     private var startScreenKey : String? = null
     private var endScreenKey : String? = null
+    private var previousScreenKey : String? = null
     private var currentScreenKey : String? = null
     private val sharedElementsObservers = mutableMapOf<SharedElId, SharedElObserver>()
     private var screenChangeObserver : ((screen: String) -> Unit)? = null
+    var transitionRunning : Boolean = false
 
     /**
      * Register all information of a shared element.
@@ -348,6 +375,20 @@ private class SharedElRootState {
      * Get current screen key
      */
     fun getCurrentScreenKey() = currentScreenKey
+
+    /**
+     * Set previous screen key
+     *
+     * @param screenKey     Current screen key
+     */
+    fun setPreviousScreenKey(screenKey: String) {
+        this.previousScreenKey = screenKey
+    }
+
+    /**
+     * Get previous screen key
+     */
+    fun getPreviousScreenKey() = previousScreenKey
 
     /**
      * Search for a shared element information using it's identifier [id]
