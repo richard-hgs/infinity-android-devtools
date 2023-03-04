@@ -3,11 +3,13 @@
 package com.infinity.devtools.ui.presentation
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -17,6 +19,7 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onPlaced
@@ -191,35 +194,51 @@ fun SharedEl(
     // State of the SharedElRoot composable
     val rootState = LocalSharedElsRootState.current
 
+    // Shared el info id
+    val id = SharedElId(key, screenKey)
+
     // Element info that will be animated
-    var sharedElInfo = rootState.getSharedElement(id = SharedElId(key, screenKey))
+    var sharedElInfo : SharedElInfo? by remember { mutableStateOf(rootState.getSharedElement(id)) }
+
+    var visible : Boolean by remember { mutableStateOf(false) }
+
+    val alpha: Float by animateFloatAsState(if (visible) 1f else .0f)
 
     if (sharedElInfo == null) {
         // Add shared element for the first time only
         sharedElInfo = SharedElInfo(
             key = key,
             screenKey = screenKey,
-            transitionContent = @Composable { SharedElTransition(id = SharedElId(key, screenKey), content = content) },
+            transitionContent = @Composable { SharedElTransition(id = id, content = content) },
             isAnimationRunning = false
         )
+        // Register the current element that will be used to create the transition
+        rootState.registerSharedElement(sharedElInfo!!)
     }
 
-    // Register the current element that will be used to create the transition
-    rootState.registerSharedElement(sharedElInfo)
+    // Set shared element observer at position 0
+    rootState.setSharedElementObserver(id = id, 0, object : SharedElObserver {
+        override fun changed(mIsStartEl: Boolean, mElInfo: SharedElInfo) {
+            sharedElInfo = mElInfo
+        }
+    })
 
     val modifier = Modifier.onPlaced { coordinates ->
         // Update the current element bounds
-        val mSharedElInfo = rootState.getSharedElement(id = sharedElInfo.id)
-
+        val mSharedElInfo = rootState.getSharedElement(id = id)
         if (mSharedElInfo != null) {
-            rootState.registerSharedElement(mSharedElInfo.copy(boundsInRoot = coordinates.positionInRoot()))
+            rootState.registerSharedElement(mSharedElInfo.copy(boundsInRoot = coordinates.positionInRoot(), isDisposed = false))
         }
+    }.alpha(alpha)
+
+    LaunchedEffect(sharedElInfo) {
+        visible = sharedElInfo != null && !sharedElInfo!!.isAnimationRunning
     }
 
     DisposableEffect(Unit) {
         onDispose {
             // Update the current element as disposed
-            val mSharedElInfo = rootState.getSharedElement(id = sharedElInfo.id)
+            val mSharedElInfo = rootState.getSharedElement(id = id)
             // Log.d("TAG", "onDispose($key - $screenKey): ${mSharedElInfo}")
             if (mSharedElInfo != null) {
                 rootState.registerSharedElement(mSharedElInfo.copy(isDisposed = true))
@@ -227,6 +246,8 @@ fun SharedEl(
         }
     }
 
+    // Show content only when animation is not running, if not the start element keeps on screen,
+    // when this same start element is transitioning to end position element.
     // Content wrapped by this composable SharedEl
     Layout(content, modifier) { measurables, constraints ->
         if (measurables.size > 1) {
@@ -242,8 +263,10 @@ fun SharedEl(
             )
         )
 
-        val width = min(max(constraints.minWidth, placeable?.width ?: 0), constraints.maxWidth)
-        val height = min(max(constraints.minHeight, placeable?.height ?: 0), constraints.maxHeight)
+        val width =
+            min(max(constraints.minWidth, placeable?.width ?: 0), constraints.maxWidth)
+        val height =
+            min(max(constraints.minHeight, placeable?.height ?: 0), constraints.maxHeight)
 
         layout(width, height) {
             placeable?.place(0, 0)
@@ -263,9 +286,9 @@ private fun SharedElTransition(
     var sharedElInfo : SharedElInfo? by remember { mutableStateOf(rootState.getSharedElement(id)) }
 
     // Register a observer that listen when a startElement bounds are set and endElement is present and its bounds is set to begin the transition
-    rootState.setSharedElementObserver(id, object : SharedElObserver {
+    rootState.setSharedElementObserver(id, 1, object : SharedElObserver {
         override fun changed(mIsStartEl: Boolean, mElInfo: SharedElInfo) {
-            // Log.d("TAG", "changed: ${mElInfo}")
+            Log.d("TAG", "changeds: ${mElInfo}")
             sharedElInfo = mElInfo
         }
     })
@@ -304,12 +327,14 @@ private fun SharedElTransition(
                 if (mSharedElInfo != null) {
                     // Begin start element transition
                     rootState.registerSharedElement(mSharedElInfo.copy(isAnimationRunning = true))
+                    rootState.registerSharedElement(mSharedElInfo.endElement!!.copy(isAnimationRunning = true))
                     offset.animateTo(
                         targetValue = Offset(sharedElInfo!!.endElement!!.boundsInRoot!!.x, sharedElInfo!!.endElement!!.boundsInRoot!!.y),
                         tween(1000)
                     )
                     // Element transition finished
                     rootState.registerSharedElement(mSharedElInfo.copy(isAnimationRunning = false))
+                    rootState.registerSharedElement(mSharedElInfo.endElement!!.copy(isAnimationRunning = false))
                 }
             } else if (
                 sharedElInfo?.screenKey == rootState.currentScreenKey
@@ -329,12 +354,14 @@ private fun SharedElTransition(
                 if (mSharedElInfo != null) {
                     // Begin start element transition
                     rootState.registerSharedElement(mSharedElInfo.copy(isAnimationRunning = true))
+                    rootState.registerSharedElement(mSharedElInfo.endElement!!.copy(isAnimationRunning = true))
                     offset.animateTo(
                         targetValue = Offset(sharedElInfo?.boundsInRoot!!.x, sharedElInfo?.boundsInRoot!!.y),
                         tween(1000)
                     )
                     // Element transition finished
                     rootState.registerSharedElement(mSharedElInfo.copy(isAnimationRunning = false))
+                    rootState.registerSharedElement(mSharedElInfo.endElement!!.copy(isAnimationRunning = false))
                 }
             }
         }
@@ -388,7 +415,7 @@ private class SharedElRootState {
     val sharedElements = mutableListOf<SharedElInfo>()
     var previousScreenKey by mutableStateOf<String?>(null)
     var currentScreenKey by mutableStateOf<String?>(null)
-    private val sharedElementsObservers = mutableMapOf<SharedElId, SharedElObserver>()
+    private val sharedElementsObservers = mutableMapOf<SharedElId, MutableMap<Int, SharedElObserver>>()
     private var sharedElementsRootObserver : (() -> Unit)? = null
     private var screenChangeObserver : ((screen: String) -> Unit)? = null
     var transitionRunning by mutableStateOf(false)
@@ -481,15 +508,21 @@ private class SharedElRootState {
      *
      * @param id         Identification of the shared element, [SharedElId] that contains key and screen key
      * of the shared element being observed
+     * @param observerId Observer id for a [SharedElId] since one element can be observed in multiple locations, and only once
+     * this [observerId] must be unique for a given [id]
      * @param observer   Observer that will listen for the shared element changes
      */
-    fun setSharedElementObserver(id: SharedElId, observer : SharedElObserver?) {
+    fun setSharedElementObserver(id: SharedElId, observerId: Int, observer : SharedElObserver?) {
         if (observer != null) {
             // Put or update observer
-            sharedElementsObservers[id] = observer
+            if (sharedElementsObservers[id] == null) {
+                sharedElementsObservers[id] = mutableMapOf()
+                Log.d("TAG", "resetObservers")
+            }
+            sharedElementsObservers[id]?.set(observerId, observer)
         } else {
             // Remove observer
-            sharedElementsObservers.remove(id)
+            sharedElementsObservers[id]?.remove(observerId)
         }
     }
 
@@ -543,7 +576,10 @@ private class SharedElRootState {
      * @param elInfo    New information of the shared element info that changed
      */
     private fun notifyObserver(id: SharedElId, elInfo: SharedElInfo) {
-        sharedElementsObservers[id]?.changed(elInfo.endElement != null, elInfo)
+        sharedElementsObservers[id]?.forEach {
+            it.value.changed(elInfo.endElement != null, elInfo)
+        }
+        // sharedElementsObservers[id]?.changed(elInfo.endElement != null, elInfo)
     }
 
     private fun notifyRootObserver() {
