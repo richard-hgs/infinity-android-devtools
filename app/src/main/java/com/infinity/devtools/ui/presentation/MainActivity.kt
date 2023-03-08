@@ -3,10 +3,13 @@
 package com.infinity.devtools.ui.presentation
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector2D
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -16,6 +19,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import com.airbnb.lottie.compose.*
 import com.infinity.devtools.ui.components.*
 import com.infinity.devtools.ui.components.sharedelement.*
@@ -40,6 +48,12 @@ class MainActivity : ComponentActivity() {
 //                )
             }
         }
+    }
+
+    @Preview
+    @Composable
+    fun Preview() {
+        RootScreen()
     }
 
     // ============== CREATING IMPLEMENTATION OF THE SHARED ELEMENTS TRANSITION =================
@@ -115,29 +129,59 @@ fun SharedElRoot(
 ) {
     val rootState = remember { SharedElRootState() }
 
-    LaunchedEffect(Unit) {
-        rootState.ready = true
+    if (rootState.curScreen == null) {
+        rootState.curScreen = screenKey
+        rootState.prevScreen = screenKey
     }
 
-    LaunchedEffect(screenKey) {
-        if (rootState.curScreen != screenKey) {
-            rootState.curScreen = screenKey
-        } else {
-            if (rootState.prevScreen == null || screenKey != rootState.prevScreen) {
-                if (rootState.prevScreen != null) {
-                    rootState.animationRunning = true
-                }
-                rootState.prevScreen = screenKey
-            } else {
-                if (rootState.prevScreen == screenKey) {
-                    rootState.animationRunning = false
-                }
-            }
+    LaunchedEffect(screenKey, rootState.curScreen, rootState.prevScreen) {
+        rootState.curScreen = screenKey
+        if (rootState.prevScreen == null) {
+            rootState.prevScreen = screenKey
+        }
+
+        if (rootState.curScreen != rootState.prevScreen) {
+            rootState.transitionRunning = true
         }
     }
 
-    if (rootState.ready) {
-        Log.d("TAG", "SharedElRoot - millis(${System.currentTimeMillis() - curMillis})")
+    val transAlpha = if(rootState.transitionRunning) 1f else 0f
+    var offsetAnim: Animatable<Offset, AnimationVector2D>? by remember { mutableStateOf(null) }
+
+    LaunchedEffect(rootState.originOffset) {
+        offsetAnim = Animatable(Offset(
+            rootState.originOffset?.x ?: 0f,
+            rootState.originOffset?.y ?: 0f,
+        ), Offset.VectorConverter)
+    }
+
+    LaunchedEffect(
+        rootState.transitionRunning,
+        rootState.originContent,
+        rootState.originOffset,
+        rootState.destinationOffset,
+        rootState.destinationContent
+    ) {
+        if (offsetAnim != null && !offsetAnim!!.isRunning) {
+            var targetOffset = rootState.originOffset
+            var destOffset = rootState.destinationOffset
+            if (rootState.curScreen == "Screen1") {
+                targetOffset = rootState.destinationOffset
+                destOffset = rootState.originOffset
+            }
+            if (targetOffset != null && destOffset != null && rootState.originContent != null && rootState.transitionRunning) {
+                // offsetAnim.snapTo(Offset(targetOffset.x, targetOffset.y))
+                offsetAnim!!.animateTo(
+                    targetValue = Offset(
+                        destOffset.x,
+                        destOffset.y
+                    ),
+                    animationSpec = tween(1000),
+                )
+                rootState.prevScreen = rootState.curScreen
+                rootState.transitionRunning = false
+            }
+        }
     }
 
     CompositionLocalProvider(
@@ -147,6 +191,12 @@ fun SharedElRoot(
         // start in any position of entire screen
         Box(modifier = Modifier.fillMaxSize()) {
             content()
+        }
+
+        Box(modifier = Modifier.alpha(transAlpha).offset {
+            IntOffset(offsetAnim?.value?.x?.toInt() ?: 0, offsetAnim?.value?.y?.toInt() ?: 0)
+        }) {
+            rootState.originContent?.let { it() }
         }
     }
 }
@@ -158,29 +208,36 @@ fun SharedEl(
     content: @Composable () -> Unit
 ) {
     val rootState = LocalSharedElsRootState.current
-    val alpha = if(rootState.ready) 1f else 0f
-    val transAlpha = if(rootState.animationRunning) 1f else 0f
+    val alpha = if(rootState.originContent == null || rootState.destinationContent == null || !rootState.transitionRunning && rootState.curScreen == screenKey) 1f else 0f
 
-    Box(modifier = Modifier.alpha(alpha)) {
-        content()
+    LaunchedEffect(Unit) {
+        if (screenKey == "Screen1") {
+            rootState.originContent = content
+        } else {
+            rootState.destinationContent = content
+        }
     }
 
-    Box(modifier = Modifier.alpha(transAlpha)) {
+    Box(modifier = Modifier.alpha(alpha)/*.background(if (screenKey == "Screen1") Color.Blue else Color.Red)*/.onPlaced { coordinates ->
+        if (screenKey == "Screen1") {
+            rootState.originOffset = coordinates.positionInRoot()
+        } else {
+            rootState.destinationOffset = coordinates.positionInRoot()
+        }
+    }) {
         content()
-    }
-
-    if (rootState.ready) {
-        Log.d("TAG", "SharedEl - millis(${System.currentTimeMillis() - curMillis})")
     }
 }
 
 private class SharedElRootState {
-    var ready by mutableStateOf(false)
     var prevScreen: String? by mutableStateOf(null)
     var curScreen: String? by mutableStateOf(null)
-    var animationRunning by mutableStateOf(false)
+    var transitionRunning: Boolean by mutableStateOf(false)
+    var originContent: (@Composable () -> Unit)? by mutableStateOf(null)
+    var originOffset: Offset? by mutableStateOf(null)
+    var destinationContent: (@Composable () -> Unit)? by mutableStateOf(null)
+    var destinationOffset: Offset? by mutableStateOf(null)
 }
-
 
 private val LocalSharedElsRootState = staticCompositionLocalOf<SharedElRootState> {
     error("SharedElementsRoot not found. SharedElement must be hosted in SharedElementsRoot.")
