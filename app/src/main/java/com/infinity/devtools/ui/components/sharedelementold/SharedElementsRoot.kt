@@ -1,4 +1,4 @@
-package com.infinity.devtools.ui.components.sharedelement
+package com.infinity.devtools.ui.components.sharedelementold
 
 import android.util.Log
 import android.view.Choreographer
@@ -17,9 +17,9 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.toSize
-import com.infinity.devtools.ui.components.sharedelement.SharedElementTransition.InProgress
-import com.infinity.devtools.ui.components.sharedelement.SharedElementTransition.WaitingForEndElementPosition
-import com.infinity.devtools.ui.components.sharedelement.SharedElementsTracker.State.*
+import com.infinity.devtools.ui.components.sharedelementold.SharedElementTransition.InProgress
+import com.infinity.devtools.ui.components.sharedelementold.SharedElementTransition.WaitingForEndElementPosition
+import com.infinity.devtools.ui.components.sharedelementold.SharedElementsTracker.State.*
 
 @Composable
 internal fun BaseSharedElement(

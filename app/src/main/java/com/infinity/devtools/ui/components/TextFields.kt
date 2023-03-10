@@ -30,8 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-import com.infinity.devtools.ui.components.sharedelement.SharedElement
-import com.infinity.devtools.ui.components.sharedelement.SharedElementsTransitionSpec
+import com.infinity.devtools.ui.components.sharedelementold.SharedElement
+import com.infinity.devtools.ui.components.sharedelementold.SharedElementsTransitionSpec
 
 @Composable
 fun AppTextField(

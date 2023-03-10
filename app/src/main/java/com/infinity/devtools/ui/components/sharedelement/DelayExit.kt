@@ -1,38 +1,40 @@
+@file:Suppress("FunctionName")
+
 package com.infinity.devtools.ui.components.sharedelement
 
 import androidx.compose.runtime.*
-import com.infinity.devtools.ui.components.sharedelement.DelayExitState.Invisible
-import com.infinity.devtools.ui.components.sharedelement.DelayExitState.Visible
 
-/**
- * When [visible] becomes false, if transition is running, delay the exit of the content until
- * transition finishes. Note that you may need to call [SharedElementsRootScope.prepareTransition]
- * before [visible] becomes false to start transition immediately.
- */
+
 @Composable
-fun SharedElementsRootScope.DelayExit(
+fun DelayExit(
     visible: Boolean,
     content: @Composable () -> Unit
 ) {
-    var state by remember { mutableStateOf(Invisible) }
+    val rootState = LocalSharedElsRootState.current
+
+    var state by remember { mutableStateOf(DelayExitState.Invisible) }
 
     when (state) {
-        Invisible -> {
-            if (visible) state = Visible
+        DelayExitState.Invisible -> {
+            if (visible) state = DelayExitState.Visible
         }
-        Visible -> {
+        DelayExitState.Visible -> {
             if (!visible) {
-                state = if (isRunningTransition) DelayExitState.ExitDelayed else Invisible
+                state = if (rootState.transitionRunning) DelayExitState.ExitDelayed else DelayExitState.Invisible
             }
         }
         DelayExitState.ExitDelayed -> {
-            if (!isRunningTransition) state = Invisible
+            if (!rootState.transitionRunning) state = DelayExitState.Invisible
         }
     }
 
-    if (state != Invisible) content()
+    if (state != DelayExitState.Invisible) content()
 }
 
+/**
+ * State used by [DelayExit] to keep both screens opens when a transition is in progress and when
+ * the screen transition finishes closes dispose the previous screen composable content
+ */
 private enum class DelayExitState {
     Invisible, Visible, ExitDelayed
 }

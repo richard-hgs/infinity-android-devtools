@@ -15,6 +15,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import com.infinity.devtools.ui.components.sharedelement.*
+import com.infinity.devtools.ui.components.sharedelementold.FadeMode
+import com.infinity.devtools.ui.components.sharedelementold.SharedElement
+import com.infinity.devtools.ui.components.sharedelementold.SharedElementsRoot
+import com.infinity.devtools.ui.components.sharedelementold.SharedElementsTransitionSpec
 
 /**
  * Shared elements navigation controller component

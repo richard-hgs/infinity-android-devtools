@@ -6,10 +6,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationVector2D
-import androidx.compose.animation.core.VectorConverter
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -18,12 +14,7 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.layout.onPlaced
-import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.*
 import com.infinity.devtools.ui.components.*
@@ -72,9 +63,21 @@ class MainActivity : ComponentActivity() {
                 }
             }
             DelayExit(visible = currentScreen == "Screen2") {
-                Screen2 {
-                    currentScreen = "Screen1"
-                }
+                Screen2(
+                    navigateScreen1 = {
+                        currentScreen = "Screen1"
+                    },
+                    navigateScreen3 = {
+                        currentScreen = "Screen3"
+                    }
+                )
+            }
+            DelayExit(visible = currentScreen == "Screen3") {
+                Screen3(
+                    navigateScreen2 = {
+                        currentScreen = "Screen2"
+                    },
+                )
             }
         }
     }
@@ -109,10 +112,9 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun Screen2(
-        navigateScreen1: () -> Unit
+        navigateScreen1: () -> Unit,
+        navigateScreen3: () -> Unit
     ) {
-        var contentText by remember { mutableStateOf("Some Text") }
-
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -127,8 +129,8 @@ class MainActivity : ComponentActivity() {
                 screenKey = "Screen2"
             ) {
                 Text(
-                    modifier = Modifier.clickable { contentText = "Some new Text" },
-                    text = contentText
+                    modifier = Modifier.clickable { navigateScreen3() },
+                    text = "Screen 3"
                 )
             }
             Divider(modifier = Modifier.height(50.dp))
@@ -142,275 +144,39 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
 
-@Composable
-fun SharedElRoot(
-    screenKey: String,
-    content: @Composable () -> Unit
-) {
-    val rootState = remember { SharedElRootState() }
 
-    if (rootState.curScreen == null) {
-        rootState.prevScreen = screenKey
-    }
-
-    rootState.curScreen = screenKey
-
-    if (rootState.prevScreen == null) {
-        rootState.prevScreen = screenKey
-    }
-
-    if (rootState.curScreen != rootState.prevScreen) {
-        rootState.transitionRunning = true
-    }
-
-    CompositionLocalProvider(
-        LocalSharedElsRootState provides rootState
+    @Composable
+    fun Screen3(
+        navigateScreen2: () -> Unit
     ) {
-        // Wrap screen content on a box to fill max size to allow transition of shared elements
-        // start in any position of entire screen
-        Box(modifier = Modifier.fillMaxSize()) {
-            content()
-        }
-
-        rootState.transitionElements.forEach {
-            SharedElTransition(it.id)
-        }
-    }
-}
-
-@Composable
-private fun SharedElTransition(
-    id: SharedElId
-) {
-    val rootState = LocalSharedElsRootState.current
-
-    val transAlpha = if(rootState.transitionRunning) 1f else 0f
-    var offsetAnim: Animatable<Offset, AnimationVector2D>? by remember { mutableStateOf(null) }
-
-    LaunchedEffect(rootState.transitionElements) {
-        val elInfo = rootState.getSharedElement(id)
-        if (elInfo?.offset != null) {
-            offsetAnim = Animatable(Offset(
-                elInfo.offset?.x ?: 0f,
-                elInfo.offset?.y ?: 0f,
-            ), Offset.VectorConverter)
-        }
-    }
-
-    LaunchedEffect(
-        rootState.transitionRunning,
-        rootState.transitionElements
-    ) {
-        if (offsetAnim != null && !offsetAnim!!.isRunning) {
-            val elInfo = rootState.getSharedElement(id)
-            if (elInfo?.endElement != null) {
-                var targetOffset = elInfo.offset
-                var destOffset = elInfo.endElement!!.offset
-                if (rootState.curScreen == elInfo.screenKey) {
-                    targetOffset = elInfo.endElement!!.offset
-                    destOffset = elInfo.offset
-                }
-                if (targetOffset != null && destOffset != null && elInfo.content != null && rootState.transitionRunning) {
-                    // offsetAnim.snapTo(Offset(targetOffset.x, targetOffset.y))
-                    offsetAnim!!.animateTo(
-                        targetValue = Offset(
-                            destOffset.x,
-                            destOffset.y
-                        ),
-                        animationSpec = tween(1000),
-                    )
-                    rootState.prevScreen = rootState.curScreen
-                    rootState.transitionRunning = false
-                }
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Bottom
+        ) {
+            Text(
+                modifier = Modifier.clickable { navigateScreen2() },
+                text = "Screen 3"
+            )
+            SharedEl(
+                key = "el1",
+                screenKey = "Screen3"
+            ) {
+                Text(
+                    text = "Some Text"
+                )
+            }
+            SharedEl(
+                key = "el2",
+                screenKey = "Screen3"
+            ) {
+                Text(
+                    text = "Some Text 2"
+                )
             }
         }
     }
-
-    Box(modifier = Modifier.alpha(transAlpha).offset {
-        IntOffset(offsetAnim?.value?.x?.toInt() ?: 0, offsetAnim?.value?.y?.toInt() ?: 0)
-    }) {
-        val elInfo = rootState.getSharedElement(id)
-        if (elInfo != null) {
-            elInfo.content?.let { it() }
-        }
-    }
 }
-
-@Composable
-fun SharedEl(
-    key: String,
-    screenKey: String,
-    content: @Composable () -> Unit
-) {
-    val rootState = LocalSharedElsRootState.current
-    val alpha = if(!rootState.transitionRunning && rootState.curScreen == screenKey) 1f else 0f
-    val id = SharedElId(key = key, screenKey = screenKey)
-    val elInfo = rootState.getSharedElement(id)
-
-    if (elInfo == null) {
-        rootState.registerSharedElement(SharedElInfo(key = key, screenKey = screenKey, content = content))
-    }
-
-    LaunchedEffect(Unit) {
-        val mElInfo = rootState.getSharedElement(id)
-        if (mElInfo != null) {
-            rootState.registerSharedElement(mElInfo.copy(content = content))
-        }
-    }
-
-    Box(modifier = Modifier.alpha(alpha) /*.background(if (screenKey == "Screen1") Color.Blue else Color.Red)*/ .onPlaced { coordinates ->
-        val mElInfo = rootState.getSharedElement(id)
-        if (mElInfo != null) {
-            rootState.registerSharedElement(mElInfo.copy(offset = coordinates.positionInRoot()))
-        }
-    }) {
-        content()
-    }
-}
-
-@Composable
-fun DelayExit(
-    visible: Boolean,
-    content: @Composable () -> Unit
-) {
-    val rootState = LocalSharedElsRootState.current
-
-    var state by remember { mutableStateOf(DelayExitState.Invisible) }
-
-    when (state) {
-        DelayExitState.Invisible -> {
-            if (visible) state = DelayExitState.Visible
-        }
-        DelayExitState.Visible -> {
-            if (!visible) {
-                state = if (rootState.transitionRunning) DelayExitState.ExitDelayed else DelayExitState.Invisible
-            }
-        }
-        DelayExitState.ExitDelayed -> {
-            if (!rootState.transitionRunning) state = DelayExitState.Invisible
-        }
-    }
-
-    if (state != DelayExitState.Invisible) content()
-}
-
-
-private class SharedElRootState {
-    var prevScreen: String? by mutableStateOf(null)
-    var curScreen: String? by mutableStateOf(null)
-    var transitionRunning: Boolean by mutableStateOf(false)
-    var transitionElements = mutableStateListOf<SharedElInfo>()
-
-    /**
-     * Register all information of a shared element.
-     * The information is needed to animate the shared element
-     * Don't forget to unregister the shared element will not be used anymore
-     *
-     * @param sharedElInfo  Shared element info. Can be a start or a end element information.
-     */
-    fun registerSharedElement(sharedElInfo : SharedElInfo) {
-        // NotNull=Shared element is already registered, Null=New shared element being registered
-        var elExists : SharedElInfo? = null
-        var elExistsPos = 0
-        // Null=Shared element start, NotNull=Parent of the Shared element end
-        var startEl : SharedElInfo? = null
-        var startElPos = 0
-        transitionElements.forEachIndexed { index, it ->
-            if (sharedElInfo.key == it.key && sharedElInfo.screenKey == it.screenKey) {
-                // Element is already registered
-                elExists = it
-                elExistsPos = index
-            }
-            if (sharedElInfo.key == it.key && sharedElInfo.screenKey != it.screenKey) {
-                // Start element of the current end element found
-                startEl = it
-                startElPos = index
-            }
-        }
-
-        if (startEl == null) {
-            // No start element found, register current element as the start element
-            if (elExists == null) {
-                // Element for key doesn't exists add for the first time as a start element
-                transitionElements.add(sharedElInfo)
-            } else {
-                // Start element already exists update it's information
-                transitionElements[elExistsPos] = sharedElInfo
-            }
-        } else {
-            // Start element found, register current element inside the start element as a end element
-            startEl!!.endElement = sharedElInfo
-            transitionElements[startElPos] = startEl!!
-        }
-    }
-
-    /**
-     * Search for a shared element information using it's identifier [id]
-     *
-     * @param id    Identifier of the shared element information
-     * @return      Element information or NULL if not found
-     */
-    fun getSharedElement(id: SharedElId) : SharedElInfo? {
-        for(i in transitionElements.indices) {
-            val sharedElAt = transitionElements[i]
-            if (sharedElAt.id == id) {
-                // Check if element being searched is the start element
-                return sharedElAt
-            } else if (sharedElAt.endElement != null && sharedElAt.endElement!!.id == id) {
-                // If not start element, checks if it's the end element
-                return sharedElAt.endElement!!
-            }
-        }
-        // Element not found return null
-        return null
-    }
-}
-
-private val LocalSharedElsRootState = staticCompositionLocalOf<SharedElRootState> {
-    error("SharedElementsRoot not found. SharedElement must be hosted in SharedElementsRoot.")
-}
-
-private data class SharedElInfo(
-    var key: String,
-    var screenKey: String,
-    var content: (@Composable () -> Unit)?,
-    var offset: Offset? = null,
-    var endElement: SharedElInfo? = null,
-    var id: SharedElId = SharedElId(key, screenKey)
-)
-
-private class SharedElId(
-    val key : String,
-    val screenKey : String
-) {
-    override fun toString(): String {
-        return "SharedElId(key='$key', screenKey='$screenKey')"
-    }
-
-    /**
-     * Overriding equals allow us to compare [SharedElId] == [SharedElId] with different hash codes,
-     * but with same attributes.
-     */
-    override fun equals(other: Any?): Boolean {
-        other as SharedElId
-        if (key != other.key) return false
-        if (screenKey != other.screenKey) return false
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = key.hashCode()
-        result = 31 * result + screenKey.hashCode()
-        return result
-    }
-}
-
-private enum class DelayExitState {
-    Invisible, Visible, ExitDelayed
-}
-
 
 //@Preview(showBackground = true)
 //@Composable

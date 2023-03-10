@@ -18,7 +18,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import com.infinity.devtools.ui.components.sharedelement.SharedElementsRootScope
+import com.infinity.devtools.ui.components.sharedelementold.SharedElementsRootScope
 
 class SharedNavController {
     val currentDestination = mutableStateOf(SharedNavStackDest.EMPTY)
