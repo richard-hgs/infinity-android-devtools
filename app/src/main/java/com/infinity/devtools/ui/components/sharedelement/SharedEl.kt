@@ -17,6 +17,7 @@ import androidx.compose.ui.layout.positionInRoot
 fun SharedEl(
     key: String,
     screenKey: String,
+    transitionContent: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     val rootState = LocalSharedElsRootState.current
@@ -25,7 +26,7 @@ fun SharedEl(
     val elInfo = rootState.getSharedElement(id)
 
     if (elInfo == null) {
-        rootState.registerSharedElement(SharedElInfo(key = key, screenKey = screenKey, content = content))
+        rootState.registerSharedElement(SharedElInfo(key = key, screenKey = screenKey, content = transitionContent ?: content))
     }
 
 //    LaunchedEffect(Unit) {

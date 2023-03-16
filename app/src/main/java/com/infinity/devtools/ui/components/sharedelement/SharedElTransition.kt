@@ -2,6 +2,7 @@
 
 package com.infinity.devtools.ui.components.sharedelement
 
+import android.graphics.PointF
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector2D
 import androidx.compose.animation.core.VectorConverter
@@ -13,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntOffset
+import com.infinity.devtools.utils.MathUtils
+import kotlin.math.roundToInt
 
 /**
  * Composable that performs the transition in [SharedElRoot] composable of a child [SharedEl]
@@ -30,7 +33,11 @@ fun SharedElTransition(
     val rootState = LocalSharedElsRootState.current
 
     val transAlpha = if(rootState.transitionRunning) 1f else 0f
+    var originOffset: Offset? by remember { mutableStateOf(null) }
+    var destOffset: Offset? by remember { mutableStateOf(null) }
     var offsetAnim: Animatable<Offset, AnimationVector2D>? by remember { mutableStateOf(null) }
+
+    val transitionScope = remember { TransitionScope() }
 
     /**
      * Listen for [SharedElRootState.transitionElements] changes to set the origin offset of the
@@ -77,22 +84,24 @@ fun SharedElTransition(
             // If origin and target elements info found
             if (elInfo != null && elInfoTarget != null) {
                 // Get the target and destination offset positions of the current transition ScreenA -> ScreenB
-                var targetOffset = elInfo.offset
-                var destOffset = elInfoTarget.offset
+                var mTargetOffset = elInfo.offset
+                var mDestOffset = elInfoTarget.offset
                 // Here we perform a transition direction check.
                 if (rootState.curScreen == elInfo.screenKey) {
                     // When rootState.curScreen == elInfo.screenKey this means that we are transitioning from ScreenB -> ScreenA
-                    targetOffset = elInfoTarget.offset
-                    destOffset = elInfo.offset
+                    mTargetOffset = elInfoTarget.offset
+                    mDestOffset = elInfo.offset
                 }
+                originOffset = mTargetOffset
+                destOffset = mDestOffset
 
                 // If the targetOffset and destOffset and content of the shared element are set we can start the transition
-                if (targetOffset != null && destOffset != null && elInfo.content != null) {
+                if (mTargetOffset != null && mDestOffset != null && elInfo.content != null) {
                     // Begin the transition
                     offsetAnim!!.animateTo(
                         targetValue = Offset(
-                            destOffset.x,
-                            destOffset.y
+                            mDestOffset.x,
+                            mDestOffset.y
                         ),
                         animationSpec = tween(1000),
                     )
@@ -105,17 +114,72 @@ fun SharedElTransition(
         }
     }
 
-    // We use a Box to apply modifiers to the transition content,
-    // One of these modifiers are a transparency to only show the transition element when this element transition is in progress
-    // Also apply the offset when a animation is running to move element to the offset of the target shared element
-    Box(modifier = Modifier.alpha(transAlpha).offset {
-        IntOffset(offsetAnim?.value?.x?.toInt() ?: 0, offsetAnim?.value?.y?.toInt() ?: 0)
-    }) {
-        // Get the updated shared element info content and composes it to display a copy of the
-        // element on the screen with a transition animation to the target screen
-        val elInfo = rootState.getSharedElement(id)
-        if (elInfo != null) {
-            elInfo.content?.let { it() }
+    LaunchedEffect(rootState.transitionRunning, originOffset, destOffset, offsetAnim?.value) {
+        if (transitionScope.transitionRunning != rootState.transitionRunning) {
+            transitionScope.transitionRunning = rootState.transitionRunning
+        }
+        val progressAccuracy = 30f
+        var progress = 0f
+        if (originOffset != null && destOffset != null) {
+            progress = MathUtils.progress2D(
+                PointF(originOffset?.x ?: 0f, originOffset?.y ?: 0f),
+                PointF(destOffset?.x ?: 0f, destOffset?.y ?: 0f),
+                PointF(offsetAnim?.value?.x ?: 0f, offsetAnim?.value?.y ?: 0f),
+                accuracy = progressAccuracy
+            )
+        }
+        if (transitionScope.progressAccuracy != progressAccuracy) {
+            transitionScope.progressAccuracy = progressAccuracy
+        }
+        if (transitionScope.progress != progress.roundToInt().toFloat()) {
+            transitionScope.progress = progress.roundToInt().toFloat()
+        }
+    }
+
+//    var progress = 0f
+//    if (originOffset != null && destOffset != null) {
+//        progress = MathUtils.progress2D(
+//            PointF(originOffset?.x ?: 0f, originOffset?.y ?: 0f),
+//            PointF(destOffset?.x ?: 0f, destOffset?.y ?: 0f),
+//            PointF(offsetAnim?.value?.x ?: 0f, offsetAnim?.value?.y ?: 0f),
+//            accuracy = 100f
+//        )
+//    }
+
+//    val transitionScope = TransitionScope(
+//        transitionRunning = rootState.transitionRunning,
+//        progress = progress,
+//        progressAccuracy = 100f
+//    )
+    CompositionLocalProvider(
+        LocalTransitionScope provides transitionScope
+    ) {
+        // We use a Box to apply modifiers to the transition content,
+        // One of these modifiers are a transparency to only show the transition element when this element transition is in progress
+        // Also apply the offset when a animation is running to move element to the offset of the target shared element
+        Box(modifier = Modifier.alpha(transAlpha).offset {
+            IntOffset(offsetAnim?.value?.x?.toInt() ?: 0, offsetAnim?.value?.y?.toInt() ?: 0)
+        }) {
+            // Get the updated shared element info content and composes it to display a copy of the
+            // element on the screen with a transition animation to the target screen
+            val elInfo = rootState.getSharedElement(id)
+            if (elInfo != null) {
+                elInfo.content?.let { it() }
+            }
         }
     }
 }
+
+class TransitionScope {
+    var transitionRunning: Boolean by mutableStateOf(false)
+    var progress: Float by mutableStateOf(0f)
+    var progressAccuracy: Float by mutableStateOf(100f)
+
+    override fun toString(): String {
+        return "TransitionScope(transitionRunning=$transitionRunning, progress=$progress, progressAccuracy=$progressAccuracy)"
+    }
+
+
+}
+
+val LocalTransitionScope = staticCompositionLocalOf<TransitionScope> { TransitionScope() }

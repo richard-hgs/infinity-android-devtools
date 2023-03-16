@@ -3,6 +3,7 @@
 package com.infinity.devtools.ui.presentation
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.airbnb.lottie.compose.*
 import com.infinity.devtools.ui.components.*
 import com.infinity.devtools.ui.components.sharedelement.*
@@ -42,7 +44,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @Preview
+    @Preview(showBackground = true)
     @Composable
     fun Preview() {
         RootScreen()
@@ -101,9 +103,27 @@ class MainActivity : ComponentActivity() {
             }
             SharedEl(
                 key = "el2",
-                screenKey = "Screen1"
+                screenKey = "Screen1",
+                transitionContent = {
+                    // This performs only the transition from this screen to second screen
+                    val transitionScope = LocalTransitionScope.current
+                    val originFontSize = 14.sp // SpanStyle.DefaultFontSize
+                    val targetFontSize = 20.sp
+                    // 6 - 100
+                    // x - progress
+                    var currentFontSize = originFontSize
+                    if (transitionScope.transitionRunning) {
+                        currentFontSize = (((transitionScope.progress * (targetFontSize.value - originFontSize.value)) / transitionScope.progressAccuracy) + originFontSize.value).sp
+                    }
+                    Log.d("TAG", "TransitionScope: $transitionScope")
+                    Text(
+                        fontSize = currentFontSize,
+                        text = "Some Text 2."
+                    )
+                }
             ) {
                 Text(
+                    fontSize = 14.sp,
                     text = "Some Text 2"
                 )
             }
@@ -139,6 +159,7 @@ class MainActivity : ComponentActivity() {
                 screenKey = "Screen2"
             ) {
                 Text(
+                    fontSize = 20.sp,
                     text = "Some Text 2"
                 )
             }
